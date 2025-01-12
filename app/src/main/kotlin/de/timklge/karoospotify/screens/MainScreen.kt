@@ -29,6 +29,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +41,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.timklge.karoospotify.AutoVolume
 import de.timklge.karoospotify.AutoVolumeConfig
@@ -51,6 +55,7 @@ import de.timklge.karoospotify.spotify.LocalClient
 import de.timklge.karoospotify.spotify.LocalClientConnectionState
 import io.hammerhead.karooext.models.HardwareType
 import io.hammerhead.karooext.models.UserProfile
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -105,7 +110,28 @@ fun MainScreen() {
     val currentSpeed by karooSystemServiceProvider.streamSpeed().collectAsStateWithLifecycle(0)
 
     LaunchedEffect(Unit) {
-        localSpotifyIsInstalled = localClient.isInstalled()
+        while (true){
+            delay(30_000L)
+        }
+    }
+
+    val owner = LocalLifecycleOwner.current
+
+    DisposableEffect(Unit) {
+        val lifecycleObserver = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                coroutineScope.launch {
+                    localSpotifyIsInstalled = localClient.isInstalled()
+                }
+            }
+        }
+
+        val lifecycle = owner.lifecycle
+        lifecycle.addObserver(lifecycleObserver)
+
+        onDispose {
+            lifecycle.removeObserver(lifecycleObserver)
+        }
     }
 
     LaunchedEffect(Unit) {

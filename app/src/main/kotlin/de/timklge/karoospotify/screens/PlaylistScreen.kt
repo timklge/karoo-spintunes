@@ -69,6 +69,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import kotlin.reflect.jvm.internal.impl.descriptors.Visibilities.Local
 
 sealed class PlaylistScreenMode {
     data class Playlist(val playlistId: String, val playlistName: String?, val playlistThumbnail: String?) : PlaylistScreenMode()
@@ -136,9 +137,15 @@ fun PlaylistScreen(
             if (playlistMode is PlaylistScreenMode.Playlist){
                 FloatingActionButton(onClick = {
                     CoroutineScope(Dispatchers.Default).launch {
-                        val playlistUrl = "spotify:playlist:${playlistMode.playlistId}"
+                        if (apiClient is LocalClient){
+                            val playlistUrl = "spotify:playlist:${playlistMode.playlistId}"
 
-                        apiClient?.playUris(PlayRequestUris(listOf(playlistUrl)))
+                            apiClient?.playUris(PlayRequestUris(listOf(playlistUrl)))
+                        } else {
+                            val playRequest = PlayRequest(contextUri = "spotify:playlist:${playlistMode.playlistId}")
+
+                            webApiClient.play(playRequest)
+                        }
                     }
 
                     finish()
