@@ -92,6 +92,7 @@ fun MainScreen() {
     var downloadThumbnails by remember { mutableStateOf(false) }
     val connectionState by localClient.connectionState.collectAsStateWithLifecycle(initialValue = LocalClientConnectionState.Idle)
     var enableLocalSpotify by remember { mutableStateOf(false) }
+    var localSpotifyIsInstalled by remember { mutableStateOf(false) }
 
     var isImperial by remember { mutableStateOf(false) }
 
@@ -102,6 +103,10 @@ fun MainScreen() {
     var autoVolumeMaxVolume by remember { mutableStateOf("100") }
 
     val currentSpeed by karooSystemServiceProvider.streamSpeed().collectAsStateWithLifecycle(0)
+
+    LaunchedEffect(Unit) {
+        localSpotifyIsInstalled = localClient.isInstalled()
+    }
 
     LaunchedEffect(Unit) {
         karooSystemServiceProvider.streamUserProfile()
@@ -159,7 +164,7 @@ fun MainScreen() {
             }
 
             if (token != null){
-                if (connectionState != LocalClientConnectionState.NotInstalled && settingsInitialized){
+                if (connectionState != LocalClientConnectionState.NotInstalled && localSpotifyIsInstalled && settingsInitialized){
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Switch(checked = enableLocalSpotify, onCheckedChange = { enableLocalSpotify = it})
                         Spacer(modifier = Modifier.width(10.dp))

@@ -51,8 +51,8 @@ class LocalClient(val context: Context) : APIClient {
     private var connectionStateFlow: MutableStateFlow<LocalClientConnectionState> = MutableStateFlow(LocalClientConnectionState.Idle)
     val connectionState: Flow<LocalClientConnectionState> get() = connectionStateFlow.asStateFlow()
 
-    suspend fun isInitialized(): Boolean = mutex.withLock {
-        spotifyRemote != null && spotifyRemote?.isConnected == true
+    suspend fun isInstalled(): Boolean = withContext(Dispatchers.Main) {
+        SpotifyAppRemote.isSpotifyInstalled(context)
     }
 
     suspend fun readImage(uri: ImageUri): Bitmap? = withContext(Dispatchers.Main) {
