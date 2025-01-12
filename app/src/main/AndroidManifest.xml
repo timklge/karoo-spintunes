@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/spotify"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:name=".KarooSpotifyApplication"
+        android:theme="@style/Theme.AppCompat">
+        <activity
+            android:name="de.timklge.karoospotify.MainActivity"
+            android:theme="@style/SplashTheme"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".auth.OAuthRedirectActivity"
+            android:theme="@style/SplashTheme"
+            android:exported="true"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="karoospotify"
+                    android:host="oauth2redirect" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".screens.PlayActivity"
+            android:theme="@style/SplashTheme"
+            android:exported="true"
+            android:launchMode="singleInstance">
+        </activity>
+
+        <activity
+            android:name=".screens.QueueActivity"
+            android:theme="@style/SplashTheme"
+            android:exported="true"
+            android:launchMode="singleInstance">
+        </activity>
+
+        <service
+            android:name="de.timklge.karoospotify.KarooSpotifyExtension"
+            android:exported="true"
+            tools:ignore="ExportedService">
+            <intent-filter>
+                <action android:name="io.hammerhead.karooext.KAROO_EXTENSION" />
+            </intent-filter>
+            <meta-data
+                android:name="io.hammerhead.karooext.EXTENSION_INFO"
+                android:resource="@xml/extension_info" />
+        </service>
+
+        <meta-data
+            android:name="io.hammerhead.karooext.MANIFEST_URL"
+            android:value="https://github.com/timklge/karoo-spotify/releases/latest/download/manifest.json" />
+    </application>
+</manifest>
