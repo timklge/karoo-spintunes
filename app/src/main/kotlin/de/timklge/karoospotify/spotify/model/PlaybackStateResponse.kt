@@ -15,4 +15,23 @@ data class PlaybackStateResponse(
     val item: Item? = null,
     @SerialName("currently_playing_type") val currentlyPlayingType: String? = null,
     @SerialName("smart_shuffle") val smartShuffle: Boolean? = null
+    val actions: Actions? = null,
+)
+
+@Serializable
+data class Actions(
+    val disallows: Disallows? = null,
+)
+
+@Serializable
+data class Disallows(
+    val pausing: Boolean? = null,
+    val resuming: Boolean? = null,
+    val seeking: Boolean? = null,
+    val skippingNext: Boolean? = null,
+    val skippingPrev: Boolean? = null,
+    val togglingRepeatContext: Boolean? = null,
+    val togglingRepeatTrack: Boolean? = null,
+    val togglingShuffle: Boolean? = null,
+    val transferringPlayback: Boolean? = null
 )

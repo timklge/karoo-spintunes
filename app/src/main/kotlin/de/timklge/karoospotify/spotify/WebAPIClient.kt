@@ -151,6 +151,26 @@ class WebAPIClient(
         }
     }
 
+    suspend fun search(q: String): SearchResponse? {
+        return try {
+            val encoded = withContext(Dispatchers.IO) {
+                URLEncoder.encode(q, "UTF-8")
+            }
+
+            val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/search?q=${q}&type=track&")
+            if (response.statusCode !in 200..299) {
+                error("HTTP ${response.statusCode}: ${response.error}")
+            }
+            response.error?.let { error(it) }
+
+            val jsonString = response.body?.decodeToString() ?: error("Failed to read json")
+            jsonWithUnknownKeys.decodeFromString(jsonString)
+        } catch (e: Throwable) {
+            karooSystemServiceProvider.showError("Search", e.message ?: "Failed to search", e)
+            null
+        }
+    }
+
     suspend fun getPlaylist(playlistId: String): Playlist? {
         return try {
             val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/playlists/$playlistId")

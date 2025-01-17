@@ -231,7 +231,8 @@ class PlayerDataType(
                         ) {
                             if (playerSize == PlayerSize.MEDIUM || playerSize == PlayerSize.FULL_PAGE) {
                                 Row(modifier = GlanceModifier.fillMaxWidth().height(45.dp), verticalAlignment = Alignment.Vertical.CenterVertically, horizontalAlignment = Alignment.Horizontal.CenterHorizontally) {
-                                    Image(ImageProvider(R.drawable.spotify_full_logo_rgb_black), "Spotify", modifier = GlanceModifier.height(40.dp).padding(2.dp))
+                                    Image(ImageProvider(R.drawable.spotify_full_logo_rgb_black), "Spotify", modifier = GlanceModifier.height(40.dp).padding(2.dp),
+                                        colorFilter = ColorFilter.tint(ColorProvider(Color.Black, Color.White)))
                                 }
                             }
 
@@ -240,17 +241,20 @@ class PlayerDataType(
 
                                 if (isThumbnailAvailable){
                                     cachedThumbnail?.let { thumbnail ->
-                                        Image(ImageProvider(thumbnail), "Thumbnail", modifier = GlanceModifier.size(150.dp).padding(5.dp, 2.dp))
+                                        Image(ImageProvider(thumbnail), "Thumbnail", modifier = GlanceModifier.size(150.dp).padding(5.dp, 2.dp),
+                                            colorFilter = ColorFilter.tint(ColorProvider(Color.Black, Color.White)))
                                     }
                                 } else {
-                                    Image(ImageProvider(R.drawable.photo_album_regular_240), "Spotify", modifier = GlanceModifier.size(150.dp).padding(5.dp, 2.dp))
+                                    Image(ImageProvider(R.drawable.photo_album_regular_240), "Spotify", modifier = GlanceModifier.size(150.dp).padding(5.dp, 2.dp),
+                                        colorFilter = ColorFilter.tint(ColorProvider(Color.Black, Color.White)))
                                 }
                             }
 
                             Row(modifier = GlanceModifier.fillMaxWidth().height(50.dp), verticalAlignment = Alignment.Vertical.Top) {
                                 if (playerSize == PlayerSize.MEDIUM && appState.isPlayingTrackThumbnailUrls?.isNotEmpty() == true){
                                     cachedThumbnail?.let { thumbnail ->
-                                        Image(ImageProvider(thumbnail), "Thumbnail", modifier = GlanceModifier.size(50.dp).padding(2.dp))
+                                        Image(ImageProvider(thumbnail), "Thumbnail", modifier = GlanceModifier.size(50.dp).padding(2.dp),
+                                            colorFilter = ColorFilter.tint(ColorProvider(Color.Black, Color.White)))
                                     }
                                 }
 

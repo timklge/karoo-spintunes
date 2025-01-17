@@ -3,7 +3,7 @@ package de.timklge.karoospotify.spotify.model
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Tracks(
+data class PlaylistTracks(
     val href: String? = null,
     val total: Int? = null,
     val limit: Int? = null,

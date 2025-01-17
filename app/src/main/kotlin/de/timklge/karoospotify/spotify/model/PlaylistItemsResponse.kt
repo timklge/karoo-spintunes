@@ -10,6 +10,6 @@ data class PlaylistItemsResponse(
     val offset: Int? = null,
     val previous: String? = null,
     val total: Int? = null,
-    val items: List<PlaylistTrackObject>? = null
+    val items: List<Item>? = null
 )
 

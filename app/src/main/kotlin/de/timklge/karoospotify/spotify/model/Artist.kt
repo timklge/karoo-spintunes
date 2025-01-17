@@ -11,7 +11,8 @@ data class Artist(
     val type: String? = null,
     val uri: String? = null,
     val href: String? = null,
-    @SerialName("external_urls") val externalUrls: ExternalUrls? = null
+    @SerialName("external_urls") val externalUrls: ExternalUrls? = null,
+    val images: List<Image>? = null,
 ) {
     companion object {
         fun fromSpotifyArtist(item: Artist): de.timklge.karoospotify.spotify.model.Artist {

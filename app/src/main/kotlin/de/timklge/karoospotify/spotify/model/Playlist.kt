@@ -15,7 +15,7 @@ data class Playlist(
     val owner: User? = null,
     val public: Boolean? = null,
     @SerialName("snapshot_id") val snapshotId: String? = null,
-    val tracks: Tracks? = null,
+    val tracks: PlaylistTracks? = null,
     val type: String? = null,
     val uri: String? = null
 )
