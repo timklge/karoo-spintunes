@@ -55,6 +55,7 @@ import de.timklge.karoospotify.screens.PlayActivity
 import de.timklge.karoospotify.screens.QueueActivity
 import de.timklge.karoospotify.spotify.APIClientProvider
 import de.timklge.karoospotify.spotify.LocalClient
+import de.timklge.karoospotify.spotify.PlayerAction
 import de.timklge.karoospotify.spotify.PlayerState
 import de.timklge.karoospotify.spotify.PlayerStateProvider
 import de.timklge.karoospotify.spotify.RepeatState
@@ -110,20 +111,20 @@ fun PlayButton(playerState: PlayerState, playerSize: PlayerDataType.PlayerSize, 
 }
 
 @Composable
-fun OptionsRows(context: Context, playerState: PlayerState, showToggle: Boolean, isPlaying: Boolean, canPlay: Boolean, showVolume: Boolean) {
+fun OptionsRows(context: Context, playerState: PlayerState, showToggle: Boolean, buttonsDisabled: Boolean, canPlay: Boolean, disabledActions: Map<PlayerAction, Boolean>) {
     Row(modifier = GlanceModifier.fillMaxWidth().height(50.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        ActionButton(R.drawable.rewind_regular_132, isPlaying) { actionRunCallback(RewindAction::class.java) }
-        ActionButton(R.drawable.fast_forward_regular_132, isPlaying) { actionRunCallback(FastForwardAction::class.java) }
-        ActionButton(R.drawable.skip_previous_regular_132, isPlaying) { actionRunCallback(PreviousAction::class.java) }
-        ActionButton(R.drawable.skip_next_regular_132, isPlaying) { actionRunCallback(NextAction::class.java) }
+        ActionButton(R.drawable.rewind_regular_132, buttonsDisabled && disabledActions[PlayerAction.SEEK] != true) { actionRunCallback(RewindAction::class.java) }
+        ActionButton(R.drawable.fast_forward_regular_132, buttonsDisabled  && disabledActions[PlayerAction.SEEK] != true) { actionRunCallback(FastForwardAction::class.java) }
+        ActionButton(R.drawable.skip_previous_regular_132, buttonsDisabled  && disabledActions[PlayerAction.SKIP_PREVIOUS] != true) { actionRunCallback(PreviousAction::class.java) }
+        ActionButton(R.drawable.skip_next_regular_132, buttonsDisabled  && disabledActions[PlayerAction.SKIP_NEXT] != true) { actionRunCallback(NextAction::class.java) }
 
         if (showToggle){
-            ActionButton(R.drawable.dots_vertical_rounded_regular_132, isPlaying) { actionRunCallback(ToggleOptionsMenuCallback::class.java)}
+            ActionButton(R.drawable.dots_vertical_rounded_regular_132, buttonsDisabled) { actionRunCallback(ToggleOptionsMenuCallback::class.java)}
         }
 
-        if (showVolume){
+        if (disabledActions[PlayerAction.SET_VOLUME] != true){
             val canMakeLouder = playerState.volume?.let { v -> v < 1.0f } ?: false
-            ActionButton(R.drawable.volume_full_regular_132, isPlaying, !canMakeLouder) { actionRunCallback(LouderAction::class.java)}
+            ActionButton(R.drawable.volume_full_regular_132, buttonsDisabled, !canMakeLouder) { actionRunCallback(LouderAction::class.java)}
         }
     }
 
@@ -134,8 +135,10 @@ fun OptionsRows(context: Context, playerState: PlayerState, showToggle: Boolean,
             else -> R.drawable.repeat_regular_132
         }
 
-        ActionButton(repeatIcon, !canPlay, playerState.isRepeating == RepeatState.OFF) { actionRunCallback(ToggleRepeatAction::class.java) }
-        ActionButton(R.drawable.shuffle_regular_132, !canPlay, playerState.isShuffling != true) { actionRunCallback(ToggleShuffleAction::class.java) }
+        val canRepeat = !buttonsDisabled && canPlay && playerState.disabledActions[PlayerAction.TOGGLE_REPEAT] != true
+        ActionButton(repeatIcon, !canRepeat, playerState.isRepeating == RepeatState.OFF) { actionRunCallback(ToggleRepeatAction::class.java) }
+        val canShuffle = !buttonsDisabled && canPlay && playerState.disabledActions[PlayerAction.TOGGLE_SHUFFLE] != true
+        ActionButton(R.drawable.shuffle_regular_132, !canShuffle, playerState.isShuffling != true) { actionRunCallback(ToggleShuffleAction::class.java) }
         ActionButton(R.drawable.playlist_solid_132, !canPlay) {
             val intent = Intent(context, QueueActivity::class.java)
             actionStartActivity(intent)
@@ -145,9 +148,9 @@ fun OptionsRows(context: Context, playerState: PlayerState, showToggle: Boolean,
             actionStartActivity(intent)
         }
 
-        if (showVolume){
+        if (disabledActions[PlayerAction.SET_VOLUME] != true){
             val canMakeQuieter = playerState.volume?.let { v -> v > 0.0f } ?: false
-            ActionButton(R.drawable.volume_low_regular_132, isPlaying, !canMakeQuieter) { actionRunCallback(QuieterAction::class.java)}
+            ActionButton(R.drawable.volume_low_regular_132, buttonsDisabled, !canMakeQuieter) { actionRunCallback(QuieterAction::class.java)}
         }
     }
 }
@@ -226,11 +229,10 @@ class PlayerDataType(
                     glance.compose(context, DpSize.Unspecified) {
                         Column(
                             modifier = GlanceModifier.fillMaxSize().padding(2.dp),
-                            verticalAlignment = Alignment.Vertical.Top,
                             horizontalAlignment = Alignment.Horizontal.CenterHorizontally
                         ) {
                             if (playerSize == PlayerSize.MEDIUM || playerSize == PlayerSize.FULL_PAGE) {
-                                Row(modifier = GlanceModifier.fillMaxWidth().height(45.dp), verticalAlignment = Alignment.Vertical.CenterVertically, horizontalAlignment = Alignment.Horizontal.CenterHorizontally) {
+                                Row(modifier = GlanceModifier.fillMaxWidth().height(40.dp), verticalAlignment = Alignment.Vertical.CenterVertically, horizontalAlignment = Alignment.Horizontal.CenterHorizontally) {
                                     Image(ImageProvider(R.drawable.spotify_full_logo_rgb_black), "Spotify", modifier = GlanceModifier.height(40.dp).padding(2.dp),
                                         colorFilter = ColorFilter.tint(ColorProvider(Color.Black, Color.White)))
                                 }
@@ -241,11 +243,10 @@ class PlayerDataType(
 
                                 if (isThumbnailAvailable){
                                     cachedThumbnail?.let { thumbnail ->
-                                        Image(ImageProvider(thumbnail), "Thumbnail", modifier = GlanceModifier.size(150.dp).padding(5.dp, 2.dp),
-                                            colorFilter = ColorFilter.tint(ColorProvider(Color.Black, Color.White)))
+                                        Image(ImageProvider(thumbnail), "Thumbnail", modifier = GlanceModifier.defaultWeight().padding(5.dp, 2.dp))
                                     }
                                 } else {
-                                    Image(ImageProvider(R.drawable.photo_album_regular_240), "Spotify", modifier = GlanceModifier.size(150.dp).padding(5.dp, 2.dp),
+                                    Image(ImageProvider(R.drawable.photo_album_regular_240), "Spotify", modifier = GlanceModifier.defaultWeight().padding(5.dp, 2.dp),
                                         colorFilter = ColorFilter.tint(ColorProvider(Color.Black, Color.White)))
                                 }
                             }
@@ -253,8 +254,7 @@ class PlayerDataType(
                             Row(modifier = GlanceModifier.fillMaxWidth().height(50.dp), verticalAlignment = Alignment.Vertical.Top) {
                                 if (playerSize == PlayerSize.MEDIUM && appState.isPlayingTrackThumbnailUrls?.isNotEmpty() == true){
                                     cachedThumbnail?.let { thumbnail ->
-                                        Image(ImageProvider(thumbnail), "Thumbnail", modifier = GlanceModifier.size(50.dp).padding(2.dp),
-                                            colorFilter = ColorFilter.tint(ColorProvider(Color.Black, Color.White)))
+                                        Image(ImageProvider(thumbnail), "Thumbnail", modifier = GlanceModifier.size(45.dp).padding(2.dp))
                                     }
                                 }
 
@@ -278,9 +278,9 @@ class PlayerDataType(
                                 OptionsRows(context = context,
                                     playerState = appState,
                                     showToggle = false,
-                                    isPlaying = buttonsDisabled,
-                                    canPlay = !buttonsDisabled || apiClient is LocalClient,
-                                    showVolume = appState.canControlVolume
+                                    buttonsDisabled = buttonsDisabled,
+                                    canPlay = (!buttonsDisabled || apiClient is LocalClient) && appState.disabledActions[PlayerAction.PLAY] != true,
+                                    disabledActions = appState.disabledActions
                                 )
 
                                 Spacer(modifier = GlanceModifier.defaultWeight())
@@ -319,9 +319,9 @@ class PlayerDataType(
                             OptionsRows(context = context,
                                 playerState = appState,
                                 showToggle = true,
-                                isPlaying = buttonsDisabled,
+                                buttonsDisabled = buttonsDisabled,
                                 canPlay = !buttonsDisabled || apiClient is LocalClient,
-                                showVolume = appState.canControlVolume)
+                                disabledActions = appState.disabledActions)
                         }
                     }
                 } else {

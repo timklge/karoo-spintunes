@@ -10,6 +10,7 @@ data class ResumePoint(
     @SerialName("resume_position_ms") val resumePositionMs: Int
 )
 
+
 @Serializable
 data class Item(
     val album: Album? = null,
@@ -29,10 +30,16 @@ data class Item(
     val type: String? = null,
     val uri: String? = null,
     @SerialName("is_local") val isLocal: Boolean? = null,
-    @SerialName("resume_point") val resumePoint: ResumePoint? = null,
+    // FIXME @SerialName("resume_point") val resumePoint: ResumePoint? = null,
+    @SerialName("release_date") val releaseDate: String? = null,
+    @SerialName("release_date_precision") val releaseDatePrecision: String? = null,
     val images: List<Image>? = null,
     val show: Show? = null
-){
+): TrackObject {
+    override fun getDefinedTrack(): Item {
+        return this
+    }
+
     companion object {
         fun fromSpotifyTrack(item: Track): Item {
             return Item(

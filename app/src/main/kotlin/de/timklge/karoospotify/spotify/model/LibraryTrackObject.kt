@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 data class LibraryTrackObject(
     val addedAt: String? = null,
     val track: Item? = null
-) : ITrackObject {
+) : TrackObject {
     override fun getDefinedTrack(): Item? {
         return track
     }

@@ -43,28 +43,35 @@ import de.timklge.karoospotify.KarooSpotifyExtension
 import de.timklge.karoospotify.R
 import de.timklge.karoospotify.spotify.ThumbnailCache
 import de.timklge.karoospotify.spotify.WebAPIClient
-import de.timklge.karoospotify.spotify.model.PlaylistsResponse
-import io.hammerhead.karooext.KarooSystemService
+import de.timklge.karoospotify.spotify.model.PlaylistsItem
+import de.timklge.karoospotify.spotify.model.ShowsResponse
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import java.net.URLEncoder
+
+sealed class PlaylistsScreenMode {
+    data object Playlists : PlaylistsScreenMode()
+    data object Shows : PlaylistsScreenMode()
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlaylistsScreen(navController: NavHostController, karooSystemService: KarooSystemService){
+fun PlaylistsScreen(navController: NavHostController, mode: PlaylistsScreenMode){
     val ctx = LocalContext.current
     val coroutineContext = rememberCoroutineScope()
 
     val thumbnailCache = koinInject<ThumbnailCache>()
     val webAPIClient = koinInject<WebAPIClient>()
 
-    val playlistPager = remember {
-        Pager(
-            PagingConfig(
+    val playlistPager: Pager<Int, PlaylistsItem> = remember {
+        Pager(PagingConfig(
             pageSize = 50,
             maxSize = 200
-        )
-        ) {
-            PlaylistsPagingSource(ctx, webAPIClient)
+        )) {
+            when (mode){
+                PlaylistsScreenMode.Playlists -> PlaylistsPagingSource(ctx, webAPIClient)
+                PlaylistsScreenMode.Shows -> ShowsPagingSource(ctx, webAPIClient)
+            }
         }
     }
     val lazyPagingItems = playlistPager.flow.collectAsLazyPagingItems()
@@ -75,11 +82,12 @@ fun PlaylistsScreen(navController: NavHostController, karooSystemService: KarooS
     val refreshState = rememberPullToRefreshState()
 
     LaunchedEffect(lazyPagingItems.itemSnapshotList) {
-        Log.i(KarooSpotifyExtension.TAG, "Playlists loaded: ${lazyPagingItems.itemCount}")
+        Log.i(KarooSpotifyExtension.TAG, "Items loaded: ${lazyPagingItems.itemCount}")
+
         lazyPagingItems.itemSnapshotList.items.filter { playlist ->
-            !playlist.images.isNullOrEmpty()
+            !playlist.getItemImages().isNullOrEmpty()
         }.forEach { playlist ->
-            val thumbnailUrl = playlist.images?.last()?.url
+            val thumbnailUrl = playlist.getItemImages()?.last()?.url
 
             if (thumbnailUrl != null){
                 coroutineContext.launch {
@@ -100,38 +108,63 @@ fun PlaylistsScreen(navController: NavHostController, karooSystemService: KarooS
         isRefreshing = isRefreshing,
         onRefresh = {
             coroutineContext.launch {
-                webAPIClient.clearCache<PlaylistsResponse>("playlists", ctx)
+                val identifier = when(mode){
+                    PlaylistsScreenMode.Playlists -> "playlists"
+                    PlaylistsScreenMode.Shows -> "shows"
+                }
+                webAPIClient.clearCache<ShowsResponse>(identifier, ctx)
                 lazyPagingItems.refresh()
             }
         }
     ) {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item {
+                val savedItemsId = when(mode){
+                    PlaylistsScreenMode.Playlists -> "saved-songs"
+                    PlaylistsScreenMode.Shows -> "saved-episodes"
+                }
+                val savedItemsName = when(mode){
+                    PlaylistsScreenMode.Playlists -> "Saved Songs"
+                    PlaylistsScreenMode.Shows -> "Saved Episodes"
+                }
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier
                     .fillMaxWidth()
                     .padding(5.dp)
-                    .clickable { navController.navigate(route = "saved-songs") }
+                    .clickable { navController.navigate(route = savedItemsId) }
                 ){
                     Image(
-                        painterResource(R.drawable.library_regular_132), contentDescription = "Saved Songs", modifier = Modifier
+                        painterResource(R.drawable.library_regular_132), contentDescription = savedItemsName, modifier = Modifier
                             .size(50.dp)
                             .padding(2.dp))
-                    Text("Saved Songs", fontSize = 20.sp)
+                    Text(savedItemsName, fontSize = 20.sp)
                 }
             }
 
             items(count = lazyPagingItems.itemCount) { index ->
                 val item = lazyPagingItems[index]
+                val targetPrefix = when(mode){
+                    PlaylistsScreenMode.Playlists -> "playlists"
+                    PlaylistsScreenMode.Shows -> "shows"
+                }
+                val itemCountSuffix = when (mode){
+                    PlaylistsScreenMode.Playlists -> "tracks"
+                    PlaylistsScreenMode.Shows -> "episodes"
+                }
 
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier
                     .fillMaxWidth()
                     .padding(2.dp)
-                    .clickable { navController.navigate(route = "playlists/${item?.id}?name=${item?.name}&thumbnail=${item?.images?.first()}") })
-                {
+                    .clickable {
+                        val itemId = URLEncoder.encode(item?.getItemId(), "UTF-8")
+                        val itemName = URLEncoder.encode(item?.getItemName(), "UTF-8")
+                        val thumbnail = URLEncoder.encode(item?.getItemImages()?.first()?.url, "UTF-8")
 
-                    val thumbnail = thumbnails[item?.images?.last()?.url]
+                        navController.navigate(route = "$targetPrefix/${itemId}?name=${itemName}&thumbnail=${thumbnail}")
+                    })
+                {
+                    val thumbnail = thumbnails[item?.getItemImages()?.last()?.url]
                     if (thumbnail != null){
-                        Image(thumbnail, contentDescription = item?.name, modifier = Modifier
+                        Image(thumbnail, contentDescription = item?.getItemName(), modifier = Modifier
                             .size(50.dp)
                             .padding(2.dp))
                     } else {
@@ -143,9 +176,9 @@ fun PlaylistsScreen(navController: NavHostController, karooSystemService: KarooS
                     Column(modifier = Modifier
                         .height(50.dp)
                         .weight(1.0f), verticalArrangement = Arrangement.Center) {
-                        Text(item?.name ?: "Unknown", fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1.0f))
+                        Text(item?.getItemName() ?: "Unknown", fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1.0f))
 
-                        val text = "${item?.tracks?.total ?: 0} tracks"
+                        val text = "${item?.getItemCount() ?: 0} $itemCountSuffix"
                         Text(text, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                     }
                 }

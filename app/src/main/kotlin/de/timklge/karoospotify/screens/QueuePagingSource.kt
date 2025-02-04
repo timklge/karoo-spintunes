@@ -6,14 +6,14 @@ import androidx.paging.PagingState
 import de.timklge.karoospotify.spotify.APIClient
 import de.timklge.karoospotify.spotify.LocalClient
 import de.timklge.karoospotify.spotify.WebAPIClient
-import de.timklge.karoospotify.spotify.model.ITrackObject
+import de.timklge.karoospotify.spotify.model.TrackObject
 import de.timklge.karoospotify.spotify.model.Item
 import de.timklge.karoospotify.spotify.model.ItemWrapper
 
 class QueuePagingSource(
     val ctx: Context, val apiClient: APIClient, val webAPIClient: WebAPIClient
-): PagingSource<Int, ITrackObject>() {
-    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, ITrackObject> {
+): PagingSource<Int, TrackObject>() {
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, TrackObject> {
         return try {
             // Queue list is not provided with the local client
             val response = webAPIClient.getPlayerQueue(ctx)
@@ -42,7 +42,7 @@ class QueuePagingSource(
         }
     }
 
-    override fun getRefreshKey(state: PagingState<Int, ITrackObject>): Int? {
+    override fun getRefreshKey(state: PagingState<Int, TrackObject>): Int? {
         return state.anchorPosition?.let { anchorPosition ->
             state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
                 ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)

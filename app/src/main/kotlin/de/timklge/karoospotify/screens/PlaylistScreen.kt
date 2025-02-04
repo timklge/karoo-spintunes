@@ -58,22 +58,23 @@ import de.timklge.karoospotify.spotify.LocalClient
 import de.timklge.karoospotify.spotify.PlayerStateProvider
 import de.timklge.karoospotify.spotify.ThumbnailCache
 import de.timklge.karoospotify.spotify.WebAPIClient
-import de.timklge.karoospotify.spotify.model.ITrackObject
+import de.timklge.karoospotify.spotify.model.EpisodesResponse
 import de.timklge.karoospotify.spotify.model.LibraryItemsResponse
 import de.timklge.karoospotify.spotify.model.Offset
 import de.timklge.karoospotify.spotify.model.PlayRequest
 import de.timklge.karoospotify.spotify.model.PlayRequestUris
 import de.timklge.karoospotify.spotify.model.PlaylistItemsResponse
-import io.hammerhead.karooext.KarooSystemService
+import de.timklge.karoospotify.spotify.model.TrackObject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
-import kotlin.reflect.jvm.internal.impl.descriptors.Visibilities.Local
 
 sealed class PlaylistScreenMode {
     data class Playlist(val playlistId: String, val playlistName: String?, val playlistThumbnail: String?) : PlaylistScreenMode()
+    data class Show(val showId: String, val showName: String?, val showThumbnail: String?) : PlaylistScreenMode()
     data object Library : PlaylistScreenMode()
+    data object SavedEpisodes : PlaylistScreenMode()
     data object Queue : PlaylistScreenMode()
 }
 
@@ -82,13 +83,12 @@ sealed class PlaylistScreenMode {
 fun PlaylistScreen(
     navController: NavHostController?,
     playlistMode: PlaylistScreenMode,
-    karooSystemService: KarooSystemService,
     finish: () -> Unit
 ) {
     val ctx = LocalContext.current
     val coroutineContext = rememberCoroutineScope()
     var selectionMode by remember { mutableStateOf(false) }
-    val selected = remember { mutableStateListOf<ITrackObject>() }
+    val selected = remember { mutableStateListOf<TrackObject>() }
 
     val webApiClient = koinInject<WebAPIClient>()
     val thumbnailCache = koinInject<ThumbnailCache>()
@@ -98,7 +98,7 @@ fun PlaylistScreen(
     // TODO Should queue be disabled in local mode? No, it should be enabled and still use the web API as its unsupported with the android SDK
     val apiClient by apiClientProvider.getActiveAPIInstance().collectAsStateWithLifecycle(initialValue = null)
 
-    fun startPlayback(item: ITrackObject?){
+    fun startPlayback(item: TrackObject?){
         CoroutineScope(Dispatchers.Default).launch {
             if (playlistMode is PlaylistScreenMode.Playlist && apiClient is WebAPIClient){
                 val playRequest = PlayRequest(
@@ -131,6 +131,8 @@ fun PlaylistScreen(
                 is PlaylistScreenMode.Playlist -> playlistMode.playlistName ?: "Unknown"
                 PlaylistScreenMode.Library -> "Library"
                 PlaylistScreenMode.Queue -> "Queue"
+                PlaylistScreenMode.SavedEpisodes -> "Episodes"
+                is PlaylistScreenMode.Show -> "Show"
             })
         }) },
         floatingActionButton = {
@@ -251,6 +253,8 @@ fun PlaylistScreen(
                             }
                             PlaylistScreenMode.Library -> LibraryPagingSource(ctx, webApiClient)
                             PlaylistScreenMode.Queue -> QueuePagingSource(ctx, apiClient!!, webApiClient)
+                            PlaylistScreenMode.SavedEpisodes -> SavedEpisodesPagingSource(ctx, webApiClient)
+                            is PlaylistScreenMode.Show -> ShowPagingSource(playlistMode.showId, ctx, webApiClient)
                         }
                     }
                 }
@@ -292,10 +296,12 @@ fun PlaylistScreen(
                     isRefreshing = isRefreshing,
                     onRefresh = {
                         coroutineContext.launch {
-                            if (playlistMode is PlaylistScreenMode.Playlist){
-                                webApiClient.clearCache<PlaylistItemsResponse>("playlist_items_${playlistMode.playlistId}", ctx)
-                            } else {
-                                webApiClient.clearCache<LibraryItemsResponse>("library", ctx)
+                            when (playlistMode){
+                                PlaylistScreenMode.Library -> webApiClient.clearCache<LibraryItemsResponse>("library", ctx)
+                                is PlaylistScreenMode.Playlist -> webApiClient.clearCache<PlaylistItemsResponse>("playlist_items_${playlistMode.playlistId}", ctx)
+                                PlaylistScreenMode.Queue -> Unit
+                                PlaylistScreenMode.SavedEpisodes -> Unit // TODO add to cache?
+                                is PlaylistScreenMode.Show -> webApiClient.clearCache<EpisodesResponse>("episodes_${playlistMode.showId}", ctx)
                             }
                             lazyPagingItems.refresh()
                         }
@@ -364,11 +370,20 @@ fun PlaylistScreen(
                                     Text(item?.getDefinedTrack()?.name ?: "Unknown", fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1.0f))
 
                                     Row {
-                                        Text(item?.getDefinedTrack()?.artists?.joinToString(", ") { it.name ?: "" } ?: "Unknown", fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                                        val subLabel = if (item?.getDefinedTrack()?.type == "episode"){
+                                            val releaseDate = item.getDefinedTrack()?.releaseDate
+                                            // val releaseDatePrecision = item.getDefinedTrack()?.releaseDatePrecision
 
-                                        val lengthText = item?.getDefinedTrack()?.durationMs?.let {
-                                            val minutes = it / 60000
-                                            val seconds = (it % 60000) / 1000
+                                            releaseDate // TODO pretty format?
+                                        } else {
+                                            item?.getDefinedTrack()?.artists?.joinToString(", ") { it.name ?: "" }
+                                        }
+
+                                        Text(subLabel  ?: "Unknown", fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+
+                                        val lengthText = item?.getDefinedTrack()?.durationMs?.let { duration ->
+                                            val minutes = duration / 60000
+                                            val seconds = (duration % 60000) / 1000
 
                                             String.format(null, "%d:%02d", minutes, seconds)
                                         }

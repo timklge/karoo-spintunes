@@ -6,6 +6,7 @@ import de.timklge.karoospotify.KarooSpotifyExtension
 import de.timklge.karoospotify.KarooSystemServiceProvider
 import de.timklge.karoospotify.auth.OAuth2Client
 import de.timklge.karoospotify.jsonWithUnknownKeys
+import de.timklge.karoospotify.spotify.model.EpisodesResponse
 import de.timklge.karoospotify.spotify.model.LibraryItemsResponse
 import de.timklge.karoospotify.spotify.model.PlayRequest
 import de.timklge.karoospotify.spotify.model.PlayRequestUris
@@ -14,6 +15,9 @@ import de.timklge.karoospotify.spotify.model.Playlist
 import de.timklge.karoospotify.spotify.model.PlaylistItemsResponse
 import de.timklge.karoospotify.spotify.model.PlaylistsResponse
 import de.timklge.karoospotify.spotify.model.QueueResponse
+import de.timklge.karoospotify.spotify.model.SavedEpisodesResponse
+import de.timklge.karoospotify.spotify.model.SearchResponse
+import de.timklge.karoospotify.spotify.model.ShowsResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
@@ -157,7 +161,7 @@ class WebAPIClient(
                 URLEncoder.encode(q, "UTF-8")
             }
 
-            val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/search?q=${q}&type=track&")
+            val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/search?q=${encoded}&type=track&")
             if (response.statusCode !in 200..299) {
                 error("HTTP ${response.statusCode}: ${response.error}")
             }
@@ -205,7 +209,7 @@ class WebAPIClient(
         }
     }
 
-    suspend fun getLibraryItems(ctx: Context, offset: Int): LibraryItemsResponse? {
+    suspend fun getLibraryItems(offset: Int): LibraryItemsResponse? {
         return try {
             readFromCache<Int, LibraryItemsResponse>( "library", offset) {
                 val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/me/tracks?offset=$offset&limit=50")
@@ -219,6 +223,60 @@ class WebAPIClient(
             }
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Queue", e.message ?: "Failed to get library items", e)
+            null
+        }
+    }
+
+    suspend fun getSavedShows(offset: Int): ShowsResponse? {
+        return try {
+            readFromCache<Int, ShowsResponse>( "shows", offset) {
+                val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/me/shows?offset=$offset&limit=50")
+                if (response.statusCode !in 200..299) {
+                    error("HTTP ${response.statusCode}: ${response.error}")
+                }
+                response.error?.let { error(it) }
+
+                val jsonString = response.body?.decodeToString() ?: error("Failed to read json")
+                jsonWithUnknownKeys.decodeFromString(jsonString)
+            }
+        } catch (e: Throwable) {
+            karooSystemServiceProvider.showError("Shows", e.message ?: "Failed to get shows", e)
+            null
+        }
+    }
+
+    suspend fun getShowEpisodes(showId: String, offset: Int): EpisodesResponse? {
+        return try {
+            readFromCache<Int, EpisodesResponse>("episodes_${showId}", offset) {
+                val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/shows/$showId/episodes?offset=$offset&limit=50")
+                if (response.statusCode !in 200..299) {
+                    error("HTTP ${response.statusCode}: ${response.error}")
+                }
+                response.error?.let { error(it) }
+
+                val jsonString = response.body?.decodeToString() ?: error("Failed to read json")
+                jsonWithUnknownKeys.decodeFromString(jsonString)
+            }
+        } catch (e: Throwable) {
+            karooSystemServiceProvider.showError("Episodes", e.message ?: "Failed to get episodes", e)
+            null
+        }
+    }
+
+    suspend fun getSavedEpisodes(offset: Int): SavedEpisodesResponse? {
+        return try {
+            //readFromCache<Int, EpisodesResponse>("episodes_${showId}", offset) {
+                val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/me/episodes?offset=$offset&limit=50")
+                if (response.statusCode !in 200..299) {
+                    error("HTTP ${response.statusCode}: ${response.error}")
+                }
+                response.error?.let { error(it) }
+
+                val jsonString = response.body?.decodeToString() ?: error("Failed to read json")
+                jsonWithUnknownKeys.decodeFromString(jsonString)
+            //}
+        } catch (e: Throwable) {
+            karooSystemServiceProvider.showError("Episodes", e.message ?: "Failed to get episodes", e)
             null
         }
     }

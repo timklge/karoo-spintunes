@@ -3,10 +3,12 @@ package de.timklge.karoospotify.screens
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -17,15 +19,11 @@ import androidx.navigation.navArgument
 import de.timklge.karoospotify.theme.AppTheme
 import io.hammerhead.karooext.KarooSystemService
 import org.koin.compose.KoinContext
-
-@Composable
-fun PodcastsScreen(){
-    Text("Not implemented yet.")
-}
+import java.net.URLDecoder
 
 @Composable
 fun BrowseScreen(navController: NavHostController, karooSystemService: KarooSystemService) {
-    Text("Not implemented yet.")
+    Text("Not implemented yet.", modifier = Modifier.padding(5.dp).fillMaxSize(), textAlign = TextAlign.Center)
 }
 
 @Composable
@@ -47,23 +45,62 @@ fun NavScreen(karooSystemService: KarooSystemService, finish: () -> Unit, navCon
                 defaultValue = null
             }
         )) { stack ->
-            val playlistId = stack.arguments?.getString("id")
-            val playlistName = stack.arguments?.getString("name")
-            val playlistThumbnail = stack.arguments?.getString("thumbnail")
+            val playlistId = URLDecoder.decode(stack.arguments?.getString("id") ?: "", "UTF-8")
+            val playlistName = URLDecoder.decode(stack.arguments?.getString("name") ?: "", "UTF-8")
+            val playlistThumbnail = URLDecoder.decode(stack.arguments?.getString("thumbnail") ?: "", "UTF-8")
 
             if (playlistId != null){
-                PlaylistScreen(navController, PlaylistScreenMode.Playlist(playlistId, playlistName, playlistThumbnail), karooSystemService, finish)
+                PlaylistScreen(
+                    navController,
+                    PlaylistScreenMode.Playlist(playlistId, playlistName, playlistThumbnail),
+                    finish
+                )
+            } else {
+                Text("Unknown playlist", modifier = Modifier.padding(5.dp))
+            }
+        }
+
+        composable(route = "shows/{id}?name={name}&thumbnail={thumbnail}", arguments = listOf(
+            navArgument("id") {
+                type = NavType.StringType
+                nullable = false
+            },
+            navArgument("name") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            },
+            navArgument("thumbnail") {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            }
+        )) { stack ->
+            val showId = URLDecoder.decode(stack.arguments?.getString("id") ?: "", "UTF-8")
+            val showName = URLDecoder.decode(stack.arguments?.getString("name") ?: "", "UTF-8")
+            val showThumbnail = URLDecoder.decode(stack.arguments?.getString("thumbnail") ?: "", "UTF-8")
+
+            if (showId != null){
+                PlaylistScreen(
+                    navController,
+                    PlaylistScreenMode.Show(showId, showName, showThumbnail),
+                    finish
+                )
             } else {
                 Text("Unknown playlist", modifier = Modifier.padding(5.dp))
             }
         }
 
         composable(route = "library"){
-            PlayScreen(navController = navController, karooSystemService = karooSystemService)
+            PlayScreen(navController, karooSystemService)
         }
 
         composable(route = "saved-songs") {
-            PlaylistScreen(navController, PlaylistScreenMode.Library, karooSystemService, finish)
+            PlaylistScreen(navController, PlaylistScreenMode.Library, finish)
+        }
+
+        composable(route = "saved-episodes") {
+            PlaylistScreen(navController, PlaylistScreenMode.SavedEpisodes, finish)
         }
     }
 }

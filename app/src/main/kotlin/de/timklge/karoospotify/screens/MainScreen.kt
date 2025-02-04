@@ -64,18 +64,18 @@ import kotlinx.serialization.encodeToString
 import org.koin.compose.koinInject
 import kotlin.math.roundToInt
 
-@Serializable
-data class SpotifySettings(
-    val welcomeDialogAccepted: Boolean = false,
-    val token: TokenResponse? = null,
-    val downloadThumbnailsViaCompanion: Boolean = true,
-    val useLocalSpotifyIfAvailable: Boolean = false,
-    val autoVolumeConfig: AutoVolumeConfig = AutoVolumeConfig()
-){
-    companion object {
-        val defaultSettings = jsonWithUnknownKeys.encodeToString(SpotifySettings())
+    @Serializable
+    data class SpotifySettings(
+        val welcomeDialogAccepted: Boolean = false,
+        val token: TokenResponse? = null,
+        val downloadThumbnailsViaCompanion: Boolean = true,
+        val useLocalSpotifyIfAvailable: Boolean = false,
+        val autoVolumeConfig: AutoVolumeConfig = AutoVolumeConfig()
+    ){
+        companion object {
+            val defaultSettings = jsonWithUnknownKeys.encodeToString(SpotifySettings())
+        }
     }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

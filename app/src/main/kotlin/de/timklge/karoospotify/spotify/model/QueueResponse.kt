@@ -9,6 +9,6 @@ class QueueResponse(
     val queue: List<Item>? = null
 )
 
-class ItemWrapper(val item: Item) : ITrackObject {
+class ItemWrapper(val item: Item) : TrackObject {
     override fun getDefinedTrack(): Item = item
 }

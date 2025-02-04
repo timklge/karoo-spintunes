@@ -1,5 +1,5 @@
 package de.timklge.karoospotify.spotify.model
 
-interface ITrackObject {
+interface TrackObject {
     fun getDefinedTrack(): Item?
 }

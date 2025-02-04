@@ -9,7 +9,7 @@ data class PlaylistTrackObject(
     @SerialName("added_by") val addedBy: User? = null,
     @SerialName("is_local") val isLocal: Boolean? = null,
     val track: Item? = null
-) : ITrackObject {
+) : TrackObject {
     override fun getDefinedTrack(): Item? {
         return track
     }

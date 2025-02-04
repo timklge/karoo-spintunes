@@ -18,4 +18,9 @@ data class Playlist(
     val tracks: PlaylistTracks? = null,
     val type: String? = null,
     val uri: String? = null
-)
+) : PlaylistsItem {
+    override fun getItemId(): String? = id
+    override fun getItemName(): String? = name
+    override fun getItemImages(): List<Image>? = images
+    override fun getItemCount(): Int? = tracks?.total
+}

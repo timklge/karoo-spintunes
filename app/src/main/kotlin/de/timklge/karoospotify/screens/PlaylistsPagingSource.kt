@@ -5,9 +5,10 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import de.timklge.karoospotify.spotify.WebAPIClient
 import de.timklge.karoospotify.spotify.model.Playlist
+import de.timklge.karoospotify.spotify.model.PlaylistsItem
 
-class PlaylistsPagingSource(val ctx: Context, val webAPIClient: WebAPIClient) : PagingSource<Int, Playlist>() {
-    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Playlist> {
+class PlaylistsPagingSource(val ctx: Context, val webAPIClient: WebAPIClient) : PagingSource<Int, PlaylistsItem>() {
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, PlaylistsItem> {
         return try {
             val nextPageNumber = params.key ?: 0
             val response = webAPIClient.getPlaylists(ctx, nextPageNumber * 50)
@@ -23,7 +24,7 @@ class PlaylistsPagingSource(val ctx: Context, val webAPIClient: WebAPIClient) : 
         }
     }
 
-    override fun getRefreshKey(state: PagingState<Int, Playlist>): Int? {
+    override fun getRefreshKey(state: PagingState<Int, PlaylistsItem>): Int? {
         return state.anchorPosition?.let { anchorPosition ->
             state.closestPageToPosition(anchorPosition)?.prevKey?.plus(1)
                 ?: state.closestPageToPosition(anchorPosition)?.nextKey?.minus(1)

@@ -6,11 +6,11 @@ import androidx.paging.PagingState
 import de.timklge.karoospotify.spotify.WebAPIClient
 import de.timklge.karoospotify.spotify.model.TrackObject
 
-class PlaylistPagingSource(val playlistId: String, val ctx: Context, val webAPIClient: WebAPIClient) : PagingSource<Int, TrackObject>() {
+class SavedEpisodesPagingSource(val ctx: Context, val webAPIClient: WebAPIClient) : PagingSource<Int, TrackObject>() {
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, TrackObject> {
         return try {
             val nextPageNumber = params.key ?: 0
-            val response = webAPIClient.getPlaylistItems(playlistId, nextPageNumber * 50)
+            val response = webAPIClient.getSavedEpisodes(nextPageNumber * 50)
             val responseItemCount = response?.items?.size ?: 0
 
             LoadResult.Page(
@@ -30,4 +30,3 @@ class PlaylistPagingSource(val playlistId: String, val ctx: Context, val webAPIC
         }
     }
 }
-

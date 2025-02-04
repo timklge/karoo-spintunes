@@ -147,7 +147,7 @@ class OAuth2Client(private val karooSystemServiceProvider: KarooSystemServicePro
     private fun refreshAccessToken(): Flow<TokenResponse> = flow {
         Log.i(KarooSpotifyExtension.TAG, "Refreshing access token")
         val refreshToken = karooSystemServiceProvider.streamSettings().first().token?.refreshToken ?: error("No refresh token available")
-
+        
         val formData = buildString {
             append("grant_type=refresh_token")
             append("&refresh_token=").append(URLEncoder.encode(refreshToken, "UTF-8"))

@@ -5,6 +5,7 @@ import de.timklge.karoospotify.datatypes.PlayerDataType
 import de.timklge.karoospotify.spotify.APIClientProvider
 import de.timklge.karoospotify.spotify.LocalClient
 import de.timklge.karoospotify.spotify.PlaybackType
+import de.timklge.karoospotify.spotify.PlayerAction
 import de.timklge.karoospotify.spotify.PlayerStateProvider
 import de.timklge.karoospotify.spotify.RepeatState
 import de.timklge.karoospotify.spotify.ThumbnailCache
@@ -93,6 +94,19 @@ class KarooSpotifyExtension : KarooExtension("karoo-spotify", "1.0-beta1") {
                 val runtime = TimeSource.Monotonic.markNow() - start
                 Log.d(TAG, "Got player state in $runtime: $playerState")
 
+                val disabledActions = mutableMapOf<PlayerAction, Boolean>()
+                playerState?.device?.supportsVolume?.let { volumeSupported -> disabledActions.put(PlayerAction.SET_VOLUME, !volumeSupported) }
+                playerState?.actions?.disallows?.let { disallows ->
+                    disallows.pausing?.let { disabledActions.put(PlayerAction.PAUSE, it) }
+                    disallows.seeking?.let { disabledActions.put(PlayerAction.SEEK, it) }
+                    disallows.skippingNext?.let { disabledActions.put(PlayerAction.SKIP_NEXT, it) }
+                    disallows.skippingPrev?.let { disabledActions.put(PlayerAction.SKIP_PREVIOUS, it) }
+                    disallows.togglingRepeatContext?.let { disabledActions.put(PlayerAction.TOGGLE_REPEAT, it) }
+                    disallows.togglingRepeatTrack?.let { disabledActions.put(PlayerAction.TOGGLE_REPEAT, it) }
+                    disallows.resuming?.let { disabledActions.put(PlayerAction.PLAY, it) }
+                    disallows.togglingShuffle?.let { disabledActions.put(PlayerAction.TOGGLE_SHUFFLE, it) }
+                }
+
                 playerStateProvider.update { state ->
                     state.copy(
                         isPlayingType = PlaybackType.fromString(playerState?.currentlyPlayingType),
@@ -101,7 +115,7 @@ class KarooSpotifyExtension : KarooExtension("karoo-spotify", "1.0-beta1") {
                         isPlayingArtistName = playerState?.item?.artists?.joinToString(", ") {
                             it.name ?: ""
                         },
-                        isPlayingShowName = playerState?.item?.show?.name,
+                        isPlayingShowName = playerState?.item?.show?.getItemName(),
                         isPlayingTrackThumbnailUrls = (playerState?.item?.images ?: playerState?.item?.album?.images)?.mapNotNull { it.url },
                         isShuffling = playerState?.shuffleState,
                         isRepeating = RepeatState.fromString(playerState?.repeatState),
@@ -110,7 +124,7 @@ class KarooSpotifyExtension : KarooExtension("karoo-spotify", "1.0-beta1") {
                         playProgressInMs = playerState?.progressMs,
                         isPlaying = playerState?.isPlaying,
                         commandPending = false,
-                        canControlVolume = playerState?.device?.supportsVolume == true,
+                        disabledActions = disabledActions,
                         volume = playerState?.device?.volumePercent?.toFloat()?.div(100f)?.coerceIn(0f, 1f)
                     )
                 }
@@ -219,6 +233,10 @@ class KarooSpotifyExtension : KarooExtension("karoo-spotify", "1.0-beta1") {
             .debounce(500L)
             .collect { playerState ->
                 playerStateProvider.update { state ->
+                    val disabled = mutableMapOf<PlayerAction, Boolean>()
+
+                    disabled[PlayerAction.SET_VOLUME] = false
+
                     state.copy(
                         isPlayingType = if (playerState.track?.isEpisode == true) PlaybackType.EPISODE else PlaybackType.TRACK,
                         isPlayingTrackName = playerState.track?.name,
@@ -238,7 +256,7 @@ class KarooSpotifyExtension : KarooExtension("karoo-spotify", "1.0-beta1") {
                         playProgressInMs = playerState.playbackPosition.toInt(),
                         isPlaying = playerState.track?.name?.let { !playerState.isPaused },
                         commandPending = false,
-                        canControlVolume = true,
+                        disabledActions = disabled,
                         volume = localClient.getVolume()
                     )
                 }

@@ -17,6 +17,11 @@ data class PlayerState(
     val requestPending: Int = 0,
     val playProgressInMs: Int? = null,
     val currentTrackLengthInMs: Int? = null,
-    val canControlVolume: Boolean = false,
-    val volume: Float? = null
+    val volume: Float? = null,
+
+    val disabledActions: MutableMap<PlayerAction, Boolean> = mutableMapOf()
 )
+
+enum class PlayerAction {
+    PLAY, PAUSE, SKIP_NEXT, SKIP_PREVIOUS, SEEK, TOGGLE_SHUFFLE, TOGGLE_REPEAT, SET_VOLUME
+}

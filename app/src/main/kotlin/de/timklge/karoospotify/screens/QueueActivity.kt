@@ -18,7 +18,11 @@ class QueueActivity : AppCompatActivity() {
         setContent {
             AppTheme {
                 KoinContext {
-                    PlaylistScreen(navController = null, playlistMode = PlaylistScreenMode.Queue, karooSystemService = karooSystemService, ::finish)
+                    PlaylistScreen(
+                        navController = null,
+                        playlistMode = PlaylistScreenMode.Queue,
+                        ::finish
+                    )
                 }
             }
         }

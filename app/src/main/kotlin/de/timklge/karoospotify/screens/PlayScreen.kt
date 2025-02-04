@@ -34,7 +34,7 @@ fun PlayScreen(navController: NavHostController, karooSystemService: KarooSystem
     val selectedTabIndex by remember { mutableIntStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
 
-    val pagerState = rememberPagerState(pageCount = { 3 })
+    val pagerState = rememberPagerState(pageCount = { 2 })
 
     Column(
         modifier = Modifier
@@ -51,29 +51,29 @@ fun PlayScreen(navController: NavHostController, karooSystemService: KarooSystem
                     .padding(2.dp)
             ) }, onClick = { coroutineScope.launch { pagerState.animateScrollToPage(0) } })
 
-            Tab(selected = selectedTabIndex == 1, text = { Text("Browse") }, icon = { Icon(
+            /* Tab(selected = selectedTabIndex == 1, text = { Text("Browse") }, icon = { Icon(
                 painterResource(R.drawable.spotify), contentDescription = "Browse", modifier = Modifier
                     .size(30.dp)
                     .padding(2.dp)
-            ) }, onClick = { coroutineScope.launch { pagerState.animateScrollToPage(1) } })
+            ) }, onClick = { coroutineScope.launch { pagerState.animateScrollToPage(1) } }) */
 
             Tab(selected = selectedTabIndex == 1, text = { Text("Pods") }, icon = { Icon(
                 painterResource(R.drawable.podcast_regular_132), contentDescription = "Podcasts", modifier = Modifier
                     .size(30.dp)
                     .padding(2.dp)
-            ) }, onClick = { coroutineScope.launch { pagerState.animateScrollToPage(2) } })
+            ) }, onClick = { coroutineScope.launch { pagerState.animateScrollToPage(1) } })
         }
 
         HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) {
             when (it) {
                 0 -> {
-                    PlaylistsScreen(navController, karooSystemService)
+                    PlaylistsScreen(navController, PlaylistsScreenMode.Playlists)
                 }
-                1 -> {
+                /* 1 -> {
                     BrowseScreen(navController, karooSystemService)
-                }
-                2 -> {
-                    PodcastsScreen()
+                } */
+                1 -> {
+                    PlaylistsScreen(navController, PlaylistsScreenMode.Shows)
                 }
             }
         }
