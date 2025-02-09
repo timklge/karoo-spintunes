@@ -12,6 +12,7 @@ import de.timklge.karoospotify.spotify.ThumbnailCache
 import de.timklge.karoospotify.spotify.WebAPIClient
 import io.hammerhead.karooext.extension.DataTypeImpl
 import io.hammerhead.karooext.extension.KarooExtension
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -149,6 +150,9 @@ class KarooSpotifyExtension : KarooExtension("karoo-spotify", "1.0-beta1") {
                 }
 
                 delay(5_000)
+            } catch(e: CancellationException){
+                Log.w(TAG, "Player advance job was cancelled")
+                startPlayerAdvanceJob()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to update player progress", e)
             }

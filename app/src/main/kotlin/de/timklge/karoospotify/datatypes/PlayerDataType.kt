@@ -111,12 +111,12 @@ fun PlayButton(playerState: PlayerState, playerSize: PlayerDataType.PlayerSize, 
 }
 
 @Composable
-fun OptionsRows(context: Context, playerState: PlayerState, showToggle: Boolean, buttonsDisabled: Boolean, canPlay: Boolean, disabledActions: Map<PlayerAction, Boolean>) {
+fun OptionsRows(context: Context, playerState: PlayerState, showToggle: Boolean, buttonsDisabled: Boolean, disabledActions: Map<PlayerAction, Boolean>) {
     Row(modifier = GlanceModifier.fillMaxWidth().height(50.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        ActionButton(R.drawable.rewind_regular_132, buttonsDisabled && disabledActions[PlayerAction.SEEK] != true) { actionRunCallback(RewindAction::class.java) }
-        ActionButton(R.drawable.fast_forward_regular_132, buttonsDisabled  && disabledActions[PlayerAction.SEEK] != true) { actionRunCallback(FastForwardAction::class.java) }
-        ActionButton(R.drawable.skip_previous_regular_132, buttonsDisabled  && disabledActions[PlayerAction.SKIP_PREVIOUS] != true) { actionRunCallback(PreviousAction::class.java) }
-        ActionButton(R.drawable.skip_next_regular_132, buttonsDisabled  && disabledActions[PlayerAction.SKIP_NEXT] != true) { actionRunCallback(NextAction::class.java) }
+        ActionButton(R.drawable.rewind_regular_132, buttonsDisabled || disabledActions[PlayerAction.SEEK] == true) { actionRunCallback(RewindAction::class.java) }
+        ActionButton(R.drawable.fast_forward_regular_132, buttonsDisabled || disabledActions[PlayerAction.SEEK] == true) { actionRunCallback(FastForwardAction::class.java) }
+        ActionButton(R.drawable.skip_previous_regular_132, buttonsDisabled || disabledActions[PlayerAction.SKIP_PREVIOUS] == true) { actionRunCallback(PreviousAction::class.java) }
+        ActionButton(R.drawable.skip_next_regular_132, buttonsDisabled || disabledActions[PlayerAction.SKIP_NEXT] == true) { actionRunCallback(NextAction::class.java) }
 
         if (showToggle){
             ActionButton(R.drawable.dots_vertical_rounded_regular_132, buttonsDisabled) { actionRunCallback(ToggleOptionsMenuCallback::class.java)}
@@ -135,15 +135,15 @@ fun OptionsRows(context: Context, playerState: PlayerState, showToggle: Boolean,
             else -> R.drawable.repeat_regular_132
         }
 
-        val canRepeat = !buttonsDisabled && canPlay && playerState.disabledActions[PlayerAction.TOGGLE_REPEAT] != true
+        val canRepeat = !buttonsDisabled && playerState.disabledActions[PlayerAction.TOGGLE_REPEAT] != true
         ActionButton(repeatIcon, !canRepeat, playerState.isRepeating == RepeatState.OFF) { actionRunCallback(ToggleRepeatAction::class.java) }
-        val canShuffle = !buttonsDisabled && canPlay && playerState.disabledActions[PlayerAction.TOGGLE_SHUFFLE] != true
+        val canShuffle = !buttonsDisabled && playerState.disabledActions[PlayerAction.TOGGLE_SHUFFLE] != true
         ActionButton(R.drawable.shuffle_regular_132, !canShuffle, playerState.isShuffling != true) { actionRunCallback(ToggleShuffleAction::class.java) }
-        ActionButton(R.drawable.playlist_solid_132, !canPlay) {
+        ActionButton(R.drawable.playlist_solid_132, buttonsDisabled) {
             val intent = Intent(context, QueueActivity::class.java)
             actionStartActivity(intent)
         }
-        ActionButton(R.drawable.library_regular_132, !canPlay) {
+        ActionButton(R.drawable.library_regular_132, buttonsDisabled) {
             val intent = Intent(context, PlayActivity::class.java)
             actionStartActivity(intent)
         }
@@ -243,10 +243,10 @@ class PlayerDataType(
 
                                 if (isThumbnailAvailable){
                                     cachedThumbnail?.let { thumbnail ->
-                                        Image(ImageProvider(thumbnail), "Thumbnail", modifier = GlanceModifier.defaultWeight().padding(5.dp, 2.dp))
+                                        Image(ImageProvider(thumbnail), "Thumbnail", modifier = GlanceModifier.height(120.dp).padding(5.dp, 2.dp))
                                     }
                                 } else {
-                                    Image(ImageProvider(R.drawable.photo_album_regular_240), "Spotify", modifier = GlanceModifier.defaultWeight().padding(5.dp, 2.dp),
+                                    Image(ImageProvider(R.drawable.photo_album_regular_240), "Spotify", modifier = GlanceModifier.height(120.dp).padding(5.dp, 2.dp),
                                         colorFilter = ColorFilter.tint(ColorProvider(Color.Black, Color.White)))
                                 }
                             }
@@ -279,7 +279,6 @@ class PlayerDataType(
                                     playerState = appState,
                                     showToggle = false,
                                     buttonsDisabled = buttonsDisabled,
-                                    canPlay = (!buttonsDisabled || apiClient is LocalClient) && appState.disabledActions[PlayerAction.PLAY] != true,
                                     disabledActions = appState.disabledActions
                                 )
 
@@ -320,7 +319,6 @@ class PlayerDataType(
                                 playerState = appState,
                                 showToggle = true,
                                 buttonsDisabled = buttonsDisabled,
-                                canPlay = !buttonsDisabled || apiClient is LocalClient,
                                 disabledActions = appState.disabledActions)
                         }
                     }

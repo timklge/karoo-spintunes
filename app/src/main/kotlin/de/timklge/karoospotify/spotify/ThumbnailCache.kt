@@ -12,8 +12,10 @@ import de.timklge.karoospotify.KarooSpotifyExtension.Companion.TAG
 import de.timklge.karoospotify.KarooSystemServiceProvider
 import de.timklge.karoospotify.makeHttpRequest
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -86,9 +88,9 @@ class ThumbnailCache(
                         val downloadEnabled = wifiStatus || enableThumbnailDownloadsWhenNotOnWifi
 
                         if (downloadEnabled) {
-                            val response = karooSystemServiceProvider.karooSystemService.makeHttpRequest("GET", url, false).first()
+                            val response = karooSystemServiceProvider.karooSystemService.makeHttpRequest("GET", url, false).singleOrNull()
 
-                            val bytes = response.body ?: error("Failed to get thumbnail data")
+                            val bytes = response?.body ?: error("Failed to get thumbnail data: ${response?.statusCode}")
                             val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
 
                             file.writeBytes(bytes)
@@ -135,13 +137,14 @@ class ThumbnailCache(
     private val inMemoryCache: MutableMap<String, CachedThumbnail?> = mutableMapOf()
     private val inMemoryCacheLock: Mutex = Mutex()
 
+    @OptIn(DelicateCoroutinesApi::class)
     suspend fun ensureThumbnailIsInCache(url: String): Unit = inMemoryCacheLock.withLock {
         try {
             if (inMemoryCache.containsKey(url)) return@withLock
 
             inMemoryCache[url] = null
 
-            CoroutineScope(Dispatchers.Default).launch {
+            CoroutineScope(Dispatchers.IO).launch {
                 val bitmap = getThumbnail(url) ?: return@launch
 
                 inMemoryCacheLock.withLock {
