@@ -1,10 +1,10 @@
 {
-  "label": "karoo-spotify-remote",
-  "packageName": "de.timklge.karoospotify",
-  "iconUrl": "https://github.com/timklge/karoo-spotify-remote/releases/latest/download/karoo-spotify-remote.png",
-  "latestApkUrl": "https://github.com/timklge/karoo-spotify-remote/releases/latest/download/app-release.apk",
-  "latestVersion": "1.0-beta1",
-  "latestVersionCode": 1,
+  "label": "karoo-spintunes",
+  "packageName": "de.timklge.karoospintunes",
+  "iconUrl": "https://github.com/timklge/karoo-spintunes/releases/latest/download/karoo-spintunes.png",
+  "latestApkUrl": "https://github.com/timklge/karoo-spintunes/releases/latest/download/app-release.apk",
+  "latestVersion": "1.0-beta2",
+  "latestVersionCode": 2,
   "developer": "timklge",
   "description": "Provides Spotify media controls via Spotify Connect",
   "releaseNotes": "Initial release."

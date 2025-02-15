@@ -1,0 +1,372 @@
+package de.timklge.karoospintunes.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.absolutePadding
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.timklge.karoospintunes.AutoVolume
+import de.timklge.karoospintunes.AutoVolumeConfig
+import de.timklge.karoospintunes.KarooSystemServiceProvider
+import de.timklge.karoospintunes.auth.OAuth2Client
+import de.timklge.karoospintunes.auth.TokenResponse
+import de.timklge.karoospintunes.jsonWithUnknownKeys
+import de.timklge.karoospintunes.spotify.LocalClient
+import de.timklge.karoospintunes.spotify.LocalClientConnectionState
+import io.hammerhead.karooext.models.HardwareType
+import io.hammerhead.karooext.models.UserProfile
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import org.koin.compose.koinInject
+import kotlin.math.roundToInt
+
+    @Serializable
+    data class SpotifySettings(
+        val welcomeDialogAccepted: Boolean = false,
+        val token: TokenResponse? = null,
+        val downloadThumbnailsViaCompanion: Boolean = true,
+        val useLocalSpotifyIfAvailable: Boolean = false,
+        val autoVolumeConfig: AutoVolumeConfig = AutoVolumeConfig()
+    ){
+        companion object {
+            val defaultSettings = jsonWithUnknownKeys.encodeToString(SpotifySettings())
+        }
+    }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MainScreen() {
+    val localClient = koinInject<LocalClient>()
+    val autoVolume = koinInject<AutoVolume>()
+    val karooSystemServiceProvider = koinInject<KarooSystemServiceProvider>()
+    val oauth2Client = koinInject<OAuth2Client>()
+
+    val ctx = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val karooConnected by karooSystemServiceProvider.connectionState.collectAsStateWithLifecycle()
+
+    var welcomeDialogVisible by remember { mutableStateOf(false) }
+    var savedDialogVisible by remember { mutableStateOf(false) }
+
+    var token by remember { mutableStateOf<TokenResponse?>(null) }
+    var settingsInitialized by remember { mutableStateOf(false) }
+    var downloadThumbnails by remember { mutableStateOf(false) }
+    val connectionState by localClient.connectionState.collectAsStateWithLifecycle(initialValue = LocalClientConnectionState.Idle)
+    var enableLocalSpotify by remember { mutableStateOf(false) }
+    var localSpotifyIsInstalled by remember { mutableStateOf(false) }
+
+    var isImperial by remember { mutableStateOf(false) }
+
+    var autoVolumeEnabled by remember { mutableStateOf(false) }
+    var autoVolumeMinSpeed by remember { mutableStateOf("0") }
+    var autoVolumeMaxSpeed by remember { mutableStateOf("0") }
+    var autoVolumeMinVolume by remember { mutableStateOf("0") }
+    var autoVolumeMaxVolume by remember { mutableStateOf("100") }
+
+    val currentSpeed by karooSystemServiceProvider.streamSpeed().collectAsStateWithLifecycle(0)
+
+    LaunchedEffect(Unit) {
+        while (true){
+            delay(30_000L)
+        }
+    }
+
+    val owner = LocalLifecycleOwner.current
+
+    DisposableEffect(Unit) {
+        val lifecycleObserver = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                coroutineScope.launch {
+                    localSpotifyIsInstalled = localClient.isInstalled()
+                }
+            }
+        }
+
+        val lifecycle = owner.lifecycle
+        lifecycle.addObserver(lifecycleObserver)
+
+        onDispose {
+            lifecycle.removeObserver(lifecycleObserver)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        karooSystemServiceProvider.streamUserProfile()
+            .combine(karooSystemServiceProvider.streamSettings()) { profile, settings -> profile to settings}
+            .distinctUntilChanged()
+            .collect { (profile, settings) ->
+                welcomeDialogVisible = !settings.welcomeDialogAccepted
+                token = settings.token
+                settingsInitialized = true
+                downloadThumbnails = settings.downloadThumbnailsViaCompanion
+                enableLocalSpotify = settings.useLocalSpotifyIfAvailable
+                isImperial = profile.preferredUnit.distance == UserProfile.PreferredUnit.UnitType.IMPERIAL
+                autoVolumeEnabled = settings.autoVolumeConfig.enabled
+                autoVolumeMinVolume = (settings.autoVolumeConfig.minVolume * 100).roundToInt().toString()
+                autoVolumeMaxVolume = (settings.autoVolumeConfig.maxVolume * 100).roundToInt().toString()
+                autoVolumeMinSpeed = (if(isImperial) settings.autoVolumeConfig.minVolumeAtSpeed * 2.23694f else settings.autoVolumeConfig.minVolumeAtSpeed * 3.6f).roundToInt().toString()
+                autoVolumeMaxSpeed = (if(isImperial) settings.autoVolumeConfig.maxVolumeAtSpeed * 2.23694f else settings.autoVolumeConfig.maxVolumeAtSpeed * 3.6f).roundToInt().toString()
+            }
+    }
+
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .background(MaterialTheme.colorScheme.background)) {
+        TopAppBar(title = { Text("Spintuness") })
+        Column(modifier = Modifier
+            .padding(10.dp)
+            .verticalScroll(rememberScrollState())
+            .fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+
+            if(settingsInitialized) {
+                if (token == null) {
+                    Text("Please login to Spotify to enable the app.")
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text("You can then proceed to add a player widget to your data pages in your profile settings.")
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    FilledTonalButton(modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp),
+                        onClick = {
+                            coroutineScope.launch {
+                                oauth2Client.startAuthFlow(ctx)
+                            }
+                        }) {
+                        Icon(Icons.Default.Person, contentDescription = "Login")
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text("Login at Spotify")
+                    }
+                } else {
+                    Text("You are logged in to Spotify.")
+                }
+            }
+
+            if (token != null){
+                if (connectionState != LocalClientConnectionState.NotInstalled && localSpotifyIsInstalled && settingsInitialized){
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Switch(checked = enableLocalSpotify, onCheckedChange = { enableLocalSpotify = it})
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        Text("Control Spotify app installed on Karoo")
+                    }
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Switch(checked = downloadThumbnails, onCheckedChange = { downloadThumbnails = it})
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    if (karooSystemServiceProvider.karooSystemService.hardwareType == HardwareType.K2){
+                        Text("Download thumbnails via mobile connection")
+                    } else {
+                        Text("Download thumbnails via companion app")
+                    }
+                }
+
+                if (enableLocalSpotify && connectionState != LocalClientConnectionState.NotInstalled && settingsInitialized){
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Switch(checked = autoVolumeEnabled, onCheckedChange = { autoVolumeEnabled = it})
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        Text("Auto set volume based on speed")
+                    }
+
+                    if (autoVolumeEnabled){
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            OutlinedTextField(value = autoVolumeMinSpeed, modifier = Modifier
+                                .weight(1f)
+                                .absolutePadding(right = 2.dp),
+                                onValueChange = { autoVolumeMinSpeed = it },
+                                label = { Text("Min Speed") },
+                                suffix = { Text(if (isImperial) "mph" else "kph") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true
+                            )
+
+                            OutlinedTextField(value = autoVolumeMaxSpeed, modifier = Modifier
+                                .weight(1f)
+                                .absolutePadding(left = 2.dp),
+                                onValueChange = { autoVolumeMaxSpeed = it },
+                                label = { Text("Max Speed") },
+                                suffix = { Text(if (isImperial) "mph" else "km/h") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true
+                            )
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            OutlinedTextField(value = autoVolumeMinVolume, modifier = Modifier
+                                .weight(1f)
+                                .absolutePadding(right = 2.dp),
+                                onValueChange = { autoVolumeMinVolume = it },
+                                label = { Text("Min Vol") },
+                                suffix = { Text("%") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true
+                            )
+
+                            OutlinedTextField(value = autoVolumeMaxVolume, modifier = Modifier
+                                .weight(1f)
+                                .absolutePadding(left = 2.dp),
+                                onValueChange = { autoVolumeMaxVolume = it },
+                                label = { Text("Max Vol") },
+                                suffix = { Text("%") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true
+                            )
+                        }
+
+                        val currentSpeedInUserUnit = if (isImperial) (currentSpeed * 2.23694f).roundToInt() else (currentSpeed * 3.6f).roundToInt()
+                        val currentUserSpeedUnit = if (isImperial) "mph" else "km/h"
+                        val currentAutoVolume = 100 * autoVolume.getVolumeForSpeed(AutoVolumeConfig(enabled = autoVolumeEnabled,
+                            minVolume = autoVolumeMinVolume.toIntOrNull()?.div(100f) ?: AutoVolumeConfig.DEFAULT_MIN_VOLUME,
+                            maxVolume = autoVolumeMaxVolume.toIntOrNull()?.div(100f) ?: AutoVolumeConfig.DEFAULT_MAX_VOLUME,
+                            minVolumeAtSpeed = autoVolumeMinSpeed.toIntOrNull()?.toFloat()?.div((if(isImperial) 2.23694f else 3.6f)) ?: AutoVolumeConfig.DEFAULT_MIN_VOLUME_AT_SPEED,
+                            maxVolumeAtSpeed = autoVolumeMaxSpeed.toIntOrNull()?.toFloat()?.div((if(isImperial) 2.23694f else 3.6f)) ?: AutoVolumeConfig.DEFAULT_MAX_VOLUME_AT_SPEED), currentSpeed.toFloat())
+
+                        Text(text = "Current: $currentSpeedInUserUnit $currentUserSpeedUnit => ${currentAutoVolume.roundToInt()}%")
+                    }
+                }
+            }
+
+
+            if (token != null && settingsInitialized){
+                FilledTonalButton(modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp), onClick = {
+                        coroutineScope.launch {
+                            karooSystemServiceProvider.saveSettings { settings ->
+                                val minSpeedSetting = (autoVolumeMinSpeed.toIntOrNull()?.toFloat()?.div((if(isImperial) 2.23694f else 3.6f))) ?: AutoVolumeConfig.DEFAULT_MIN_VOLUME_AT_SPEED
+                                val maxSpeedSetting = (autoVolumeMaxSpeed.toIntOrNull()?.toFloat()?.div((if(isImperial) 2.23694f else 3.6f))) ?: AutoVolumeConfig.DEFAULT_MAX_VOLUME_AT_SPEED
+
+                                settings.copy(welcomeDialogAccepted = true,
+                                    downloadThumbnailsViaCompanion = downloadThumbnails,
+                                    useLocalSpotifyIfAvailable = enableLocalSpotify,
+                                    autoVolumeConfig = AutoVolumeConfig(
+                                        enabled = autoVolumeEnabled,
+                                        minVolumeAtSpeed = minSpeedSetting,
+                                        maxVolumeAtSpeed = maxSpeedSetting,
+                                        minVolume = autoVolumeMinVolume.toIntOrNull()?.div(100f) ?: AutoVolumeConfig.DEFAULT_MIN_VOLUME,
+                                        maxVolume = autoVolumeMaxVolume.toIntOrNull()?.div(100f) ?: AutoVolumeConfig.DEFAULT_MAX_VOLUME)
+                                    )
+                            }
+                            savedDialogVisible = true
+                        }
+                }) {
+                    Icon(Icons.Default.Done, contentDescription = "Save")
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Text("Save")
+                }
+
+                FilledTonalButton(modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp), onClick = {
+                    coroutineScope.launch {
+                        karooSystemServiceProvider.saveSettings { settings ->
+                            settings.copy(token = null)
+                        }
+                    }
+                }) {
+                    Icon(Icons.Default.Clear, contentDescription = "Logout")
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Text("Logout")
+                }
+            }
+
+            if (!karooConnected){
+                Text(modifier = Modifier.padding(5.dp), text = "Could not read device status. Is your Karoo updated?")
+            }
+
+            when (connectionState){
+                is LocalClientConnectionState.Connecting -> {
+                    Text("Trying to connect to local Spotify client...")
+                }
+                is LocalClientConnectionState.Connected -> {
+                    Text("Connected to local Spotify client.")
+                }
+                is LocalClientConnectionState.Failed -> {
+                    Text("Local Spotify connection failed: ${(connectionState as LocalClientConnectionState.Failed).message}")
+                }
+                is LocalClientConnectionState.NotInstalled -> {
+                    Text("Local Spotify app is not installed.")
+                }
+                else -> {}
+            }
+        }
+    }
+
+    if (savedDialogVisible){
+        AlertDialog(onDismissRequest = { savedDialogVisible = false },
+            confirmButton = { Button(onClick = {
+                savedDialogVisible = false
+            }) { Text("OK") } },
+            text = { Text("Settings saved successfully.") }
+        )
+    }
+
+    if (welcomeDialogVisible){
+        AlertDialog(onDismissRequest = { },
+            confirmButton = { Button(onClick = {
+                coroutineScope.launch {
+                    karooSystemServiceProvider.saveSettings { settings -> settings.copy(welcomeDialogAccepted = true) }
+                }
+            }) { Text("OK") } },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text("Welcome to karoo-spintunes!")
+
+                    Spacer(Modifier.padding(10.dp))
+
+                    Text("Please note that this app requires an active internet connection during riding to control the Spotify app on your phone. To use it offline, please sideload the Spotify app on your Karoo.")
+                }
+            }
+        )
+    }
+}

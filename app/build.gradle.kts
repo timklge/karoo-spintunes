@@ -8,17 +8,17 @@ plugins {
 }
 
 android {
-    namespace = "de.timklge.karoospotify"
+    namespace = "de.timklge.karoospintunes"
     compileSdk = 35
     //noinspection GradleDependency
 
     defaultConfig {
-        applicationId = "de.timklge.karoospotify"
+        applicationId = "de.timklge.karoospintunes"
         minSdk = 26
         //noinspection ExpiredTargetSdkVersion
         targetSdk = 31
-        versionCode = 1
-        versionName = "1.0-beta1"
+        versionCode = 2
+        versionName = "1.0-beta2"
 
         val env: MutableMap<String, String> = System.getenv()
         val clientId = env["SPOTIFY_CLIENT_ID"] ?: project.findProperty("SPOTIFY_CLIENT_ID").toString()

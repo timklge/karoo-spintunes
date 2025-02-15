@@ -14,7 +14,7 @@
         android:name=".KarooSpotifyApplication"
         android:theme="@style/Theme.AppCompat">
         <activity
-            android:name="de.timklge.karoospotify.MainActivity"
+            android:name="de.timklge.karoospintunes.MainActivity"
             android:theme="@style/SplashTheme"
             android:exported="true">
             <intent-filter>
@@ -53,7 +53,7 @@
         </activity>
 
         <service
-            android:name="de.timklge.karoospotify.KarooSpotifyExtension"
+            android:name="de.timklge.karoospintunes.KarooSpintunesExtension"
             android:exported="true"
             tools:ignore="ExportedService">
             <intent-filter>
@@ -66,6 +66,6 @@
 
         <meta-data
             android:name="io.hammerhead.karooext.MANIFEST_URL"
-            android:value="https://github.com/timklge/karoo-spotify/releases/latest/download/manifest.json" />
+            android:value="https://github.com/timklge/karoo-spintunes/releases/latest/download/manifest.json" />
     </application>
 </manifest>

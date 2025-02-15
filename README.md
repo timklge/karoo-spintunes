@@ -1,11 +1,11 @@
-# Karoo Spotify Remote Control Extension
+# Karoo Spintunes Extension
 
 > [!IMPORTANT]  
 > App is currently in testing and not yet available for sideloading.
 
-[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/timklge/karoo-spotify/android.yml)](https://github.com/timklge/karoo-spotify/actions/workflows/android.yml)
-[![GitHub Downloads (specific asset, all releases)](https://img.shields.io/github/downloads/timklge/karoo-spotify/app-release.apk)](https://github.com/timklge/karoo-spotify/releases)
-[![GitHub License](https://img.shields.io/github/license/timklge/karoo-spotify)](https://github.com/timklge/karoo-spotify/blob/master/LICENSE)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/timklge/karoo-spintunes/android.yml)](https://github.com/timklge/karoo-spintunes/actions/workflows/android.yml)
+[![GitHub Downloads (specific asset, all releases)](https://img.shields.io/github/downloads/timklge/karoo-spintunes/app-release.apk)](https://github.com/timklge/karoo-spintunes/releases)
+[![GitHub License](https://img.shields.io/github/license/timklge/karoo-spintunes)](https://github.com/timklge/karoo-spintunes/blob/master/LICENSE)
 
 This extension for Karoo devices adds a graphical data field with Spotify music controls that can be added to data pages.
 

@@ -2,7 +2,7 @@
 <ExtensionInfo
     displayName="@string/extension_name"
     icon="@drawable/spotify"
-    id="karoo-spotify"
+    id="karoo-spintunes"
     scansDevices="false">
     <DataType
         description="@string/player_description"
