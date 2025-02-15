@@ -36,6 +36,7 @@ class WebAPIClient(
     companion object {
         const val CACHE_TIMEOUT = 1000 * 60 * 60 * 24 * 7L // 1 week
         const val BASE_URL = "https://api.spotify.com/v1"
+        const val PAGE_SIZE = 30
     }
 
     private suspend inline fun<reified K, reified V> readFromCache(identifier: String, key: K, crossinline supplier: suspend (K) -> V): V {
@@ -194,7 +195,7 @@ class WebAPIClient(
     suspend fun getPlaylistItems(playlistId: String, offset: Int): PlaylistItemsResponse? {
         return try {
             readFromCache<Int, PlaylistItemsResponse>("playlist_items_${playlistId}", offset) {
-                val response = oAuth2Client.makeAuthorizedRequest( "GET", "$BASE_URL/playlists/$playlistId/tracks?offset=$offset&limit=50")
+                val response = oAuth2Client.makeAuthorizedRequest( "GET", "$BASE_URL/playlists/$playlistId/tracks?offset=$offset&limit=${PAGE_SIZE}")
                 if (response.statusCode !in 200..299) {
                     error("HTTP ${response.statusCode}: ${response.error}")
                 }
@@ -212,7 +213,7 @@ class WebAPIClient(
     suspend fun getLibraryItems(offset: Int): LibraryItemsResponse? {
         return try {
             readFromCache<Int, LibraryItemsResponse>( "library", offset) {
-                val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/me/tracks?offset=$offset&limit=50")
+                val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/me/tracks?offset=$offset&limit=${PAGE_SIZE}")
                 if (response.statusCode !in 200..299) {
                     error("HTTP ${response.statusCode}: ${response.error}")
                 }
@@ -230,7 +231,7 @@ class WebAPIClient(
     suspend fun getSavedShows(offset: Int): ShowsResponse? {
         return try {
             readFromCache<Int, ShowsResponse>( "shows", offset) {
-                val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/me/shows?offset=$offset&limit=50")
+                val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/me/shows?offset=$offset&limit=${PAGE_SIZE}")
                 if (response.statusCode !in 200..299) {
                     error("HTTP ${response.statusCode}: ${response.error}")
                 }
@@ -248,7 +249,7 @@ class WebAPIClient(
     suspend fun getShowEpisodes(showId: String, offset: Int): EpisodesResponse? {
         return try {
             readFromCache<Int, EpisodesResponse>("episodes_${showId}", offset) {
-                val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/shows/$showId/episodes?offset=$offset&limit=50")
+                val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/shows/$showId/episodes?offset=$offset&limit=${PAGE_SIZE}")
                 if (response.statusCode !in 200..299) {
                     error("HTTP ${response.statusCode}: ${response.error}")
                 }
@@ -266,7 +267,7 @@ class WebAPIClient(
     suspend fun getSavedEpisodes(offset: Int): SavedEpisodesResponse? {
         return try {
             //readFromCache<Int, EpisodesResponse>("episodes_${showId}", offset) {
-                val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/me/episodes?offset=$offset&limit=50")
+                val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/me/episodes?offset=$offset&limit=${PAGE_SIZE}")
                 if (response.statusCode !in 200..299) {
                     error("HTTP ${response.statusCode}: ${response.error}")
                 }
@@ -281,7 +282,7 @@ class WebAPIClient(
         }
     }
 
-    suspend fun getPlayerQueue(ctx: Context): QueueResponse? {
+    suspend fun getPlayerQueue(): QueueResponse? {
         return try {
             val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/me/player/queue")
             if (response.statusCode !in 200..299) {
@@ -297,10 +298,10 @@ class WebAPIClient(
         }
     }
 
-    suspend fun getPlaylists(ctx: Context, offset: Int = 0): PlaylistsResponse? {
+    suspend fun getPlaylists(offset: Int = 0): PlaylistsResponse? {
         return try {
             readFromCache<Int, PlaylistsResponse>("playlists", offset) {
-                val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/me/playlists?limit=50&offset=$offset")
+                val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/me/playlists?limit=${PAGE_SIZE}&offset=$offset")
                 if (response.statusCode !in 200..299) {
                     error("HTTP ${response.statusCode}: ${response.error}")
                 }
@@ -355,7 +356,10 @@ class WebAPIClient(
 
     override suspend fun addToQueue(uri: String) {
         try {
-            oAuth2Client.makeAuthorizedRequest("POST", "$BASE_URL/me/player/queue?uri=${URLEncoder.encode(uri, "UTF-8")}")
+            val url = withContext(Dispatchers.IO) {
+                URLEncoder.encode(uri, "UTF-8")
+            }
+            oAuth2Client.makeAuthorizedRequest("POST", "$BASE_URL/me/player/queue?uri=${url}")
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Add To Queue", e.message ?: "Failed to add track", e)
         }

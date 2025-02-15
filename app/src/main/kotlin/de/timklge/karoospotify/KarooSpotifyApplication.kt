@@ -56,7 +56,7 @@ class KarooSystemServiceProvider(private val context: Context) {
                 karooSystemService.dispatch(RequestBluetooth("karoo-spotify"))
             }
 
-            CoroutineScope(Dispatchers.Default).launch {
+            CoroutineScope(Dispatchers.IO).launch {
                 _connectionState.emit(connected)
             }
         }
@@ -88,7 +88,7 @@ class KarooSystemServiceProvider(private val context: Context) {
             try {
                 readSettings(settingsJson[settingsKey])
             } catch(e: Throwable){
-                Log.e(KarooSpotifyExtension.TAG, "Failed to read preferences", e)
+                Log.e(TAG, "Failed to read preferences", e)
                 jsonWithUnknownKeys.decodeFromString<SpotifySettings>(SpotifySettings.defaultSettings)
             }
         }.distinctUntilChanged()
@@ -132,7 +132,7 @@ class KarooSystemServiceProvider(private val context: Context) {
                 val deserializedError = message.let { jsonWithUnknownKeys.decodeFromString<WebAPIErrorResponse>(it) }
                 errorMessageString = "${deserializedError.error.status} - ${deserializedError.error.message}"
             } catch(e: Throwable) {
-                Log.w(KarooSpotifyExtension.TAG, "Expected error to be in WebAPIErrorResponse format, but was not: ${e.message}")
+                Log.w(TAG, "Expected error to be in WebAPIErrorResponse format, but was not: ${e.message}")
             }
         }
 

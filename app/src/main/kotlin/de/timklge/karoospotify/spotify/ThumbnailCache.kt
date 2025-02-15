@@ -37,7 +37,7 @@ class ThumbnailCache(
             thumbnailCacheDir.mkdirs()
         }
 
-        CoroutineScope(Dispatchers.Default).launch {
+        CoroutineScope(Dispatchers.IO).launch {
             karooSystemServiceProvider.streamSettings().collect { settings ->
                 lock.withLock {
                     enableThumbnailDownloadsWhenNotOnWifi = settings.downloadThumbnailsViaCompanion
@@ -117,7 +117,7 @@ class ThumbnailCache(
                         bitmap
                     }
 
-                    CoroutineScope(Dispatchers.Default).launch {
+                    CoroutineScope(Dispatchers.IO).launch {
                         // Trigger player update
                         playerStateProvider.update { state -> state }
                     }

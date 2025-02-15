@@ -98,8 +98,13 @@ fun PlaylistScreen(
     // TODO Should queue be disabled in local mode? No, it should be enabled and still use the web API as its unsupported with the android SDK
     val apiClient by apiClientProvider.getActiveAPIInstance().collectAsStateWithLifecycle(initialValue = null)
 
-    fun startPlayback(item: TrackObject?){
-        CoroutineScope(Dispatchers.Default).launch {
+    var playStarted = false
+
+    suspend fun startPlayback(item: TrackObject?){
+        if (playStarted) return
+        playStarted = true
+
+        try {
             if (playlistMode is PlaylistScreenMode.Playlist && apiClient is WebAPIClient){
                 val playRequest = PlayRequest(
                     contextUri = "spotify:playlist:${playlistMode.playlistId}",
@@ -120,6 +125,8 @@ fun PlaylistScreen(
                     commandPending = true
                 )
             }
+        } finally {
+            playStarted = false
         }
 
         finish()
@@ -138,7 +145,7 @@ fun PlaylistScreen(
         floatingActionButton = {
             if (playlistMode is PlaylistScreenMode.Playlist){
                 FloatingActionButton(onClick = {
-                    CoroutineScope(Dispatchers.Default).launch {
+                    CoroutineScope(Dispatchers.IO).launch {
                         if (apiClient is LocalClient){
                             val playlistUrl = "spotify:playlist:${playlistMode.playlistId}"
 
@@ -164,7 +171,7 @@ fun PlaylistScreen(
                             .size(50.dp)
                             .padding(horizontal = 10.dp)
                             .clickable {
-                                CoroutineScope(Dispatchers.Default).launch {
+                                CoroutineScope(Dispatchers.IO).launch {
                                     val selectedUri =
                                         selected.mapNotNull { it.getDefinedTrack()?.uri }
 
@@ -190,7 +197,7 @@ fun PlaylistScreen(
                         .size(50.dp)
                         .padding(horizontal = 10.dp)
                         .clickable {
-                            CoroutineScope(Dispatchers.Default).launch {
+                            CoroutineScope(Dispatchers.IO).launch {
                                 val selectedUri = selected.mapNotNull { it.getDefinedTrack()?.uri }
 
                                 selectedUri.forEach { uri ->
@@ -205,7 +212,7 @@ fun PlaylistScreen(
                             .size(50.dp)
                             .padding(horizontal = 10.dp)
                             .clickable {
-                                CoroutineScope(Dispatchers.Default).launch {
+                                CoroutineScope(Dispatchers.IO).launch {
                                     when (apiClient) {
                                         is WebAPIClient -> {
                                             val selectedTrackIds =
@@ -348,7 +355,9 @@ fun PlaylistScreen(
                                     if (selectionMode) {
                                         toggleSelect()
                                     } else {
-                                        startPlayback(item)
+                                        coroutineContext.launch {
+                                            startPlayback(item)
+                                        }
                                     }
                                 })
                             {
@@ -364,14 +373,22 @@ fun PlaylistScreen(
                                         .padding(2.dp))
                                 }
 
+                                val isEpisode = item?.getDefinedTrack()?.type == "episode"
+
                                 Column(modifier = Modifier
-                                    .height(50.dp)
-                                    .weight(1.0f), verticalArrangement = Arrangement.Center) {
-                                    Text(item?.getDefinedTrack()?.name ?: "Unknown", fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1.0f))
+                                    //.height(if(isEpisode) 100.dp else 50.dp)
+                                    //.weight(1.0f)
+                                    , verticalArrangement = Arrangement.Center) {
+
+                                    if (isEpisode){
+                                        Text(item?.getDefinedTrack()?.name ?: "Unknown", fontSize = 16.sp, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                                    } else {
+                                        Text(item?.getDefinedTrack()?.name ?: "Unknown", fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    }
 
                                     Row {
-                                        val subLabel = if (item?.getDefinedTrack()?.type == "episode"){
-                                            val releaseDate = item.getDefinedTrack()?.releaseDate
+                                        val subLabel = if (isEpisode){
+                                            val releaseDate = item?.getDefinedTrack()?.releaseDate
                                             // val releaseDatePrecision = item.getDefinedTrack()?.releaseDatePrecision
 
                                             releaseDate // TODO pretty format?

@@ -10,13 +10,13 @@ class ShowPagingSource(val showId: String, val ctx: Context, val webAPIClient: W
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, TrackObject> {
         return try {
             val nextPageNumber = params.key ?: 0
-            val response = webAPIClient.getShowEpisodes(showId, nextPageNumber * 50)
+            val response = webAPIClient.getShowEpisodes(showId, nextPageNumber * WebAPIClient.PAGE_SIZE)
             val responseItemCount = response?.items?.size ?: 0
 
             LoadResult.Page(
                 data = response?.items ?: emptyList(),
                 prevKey = null,
-                nextKey = if (responseItemCount < 50) null else nextPageNumber + 1
+                nextKey = if (responseItemCount < WebAPIClient.PAGE_SIZE) null else nextPageNumber + 1
             )
         } catch (e: Exception) {
             LoadResult.Error(e)

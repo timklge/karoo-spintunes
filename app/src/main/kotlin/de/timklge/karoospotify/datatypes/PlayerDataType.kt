@@ -165,7 +165,7 @@ class PlayerDataType(
 
     // FIXME: Remove. Currently, the data field will permanently show "no sensor" if no data stream is provided
     override fun startStream(emitter: Emitter<StreamState>) {
-        val job = CoroutineScope(Dispatchers.Default).launch {
+        val job = CoroutineScope(Dispatchers.IO).launch {
             emitter.onNext(StreamState.Streaming(DataPoint(dataTypeId, mapOf(DataType.Field.SINGLE to 0.0))))
         }
         emitter.setCancellable {
@@ -185,7 +185,7 @@ class PlayerDataType(
     override fun startView(context: Context, config: ViewConfig, emitter: ViewEmitter) {
         Log.d(KarooSpotifyExtension.TAG, "Starting player view with $emitter - $config")
 
-        val configJob = CoroutineScope(Dispatchers.Default).launch {
+        val configJob = CoroutineScope(Dispatchers.IO).launch {
             emitter.onNext(UpdateGraphicConfig(showHeader = false))
             awaitCancellation()
         }
@@ -200,7 +200,7 @@ class PlayerDataType(
             PlayerSize.FULL_PAGE
         }
 
-        val viewJob = CoroutineScope(Dispatchers.Default).launch {
+        val viewJob = CoroutineScope(Dispatchers.IO).launch {
             playerStateProvider.state
                 .combine(apiClientProvider.getActiveAPIInstance()) { state, apiClient ->
                     state to apiClient
@@ -216,7 +216,7 @@ class PlayerDataType(
                 }
 
                 val cachedThumbnail = thumbnailUrl?.let { url ->
-                    CoroutineScope(Dispatchers.Default).launch {
+                    CoroutineScope(Dispatchers.IO).launch {
                         thumbnailCache.ensureThumbnailIsInCache(thumbnailUrl)
                     }
 
@@ -243,10 +243,10 @@ class PlayerDataType(
 
                                 if (isThumbnailAvailable){
                                     cachedThumbnail?.let { thumbnail ->
-                                        Image(ImageProvider(thumbnail), "Thumbnail", modifier = GlanceModifier.height(120.dp).padding(5.dp, 2.dp))
+                                        Image(ImageProvider(thumbnail), "Thumbnail", modifier = GlanceModifier.defaultWeight().padding(5.dp, 2.dp))
                                     }
                                 } else {
-                                    Image(ImageProvider(R.drawable.photo_album_regular_240), "Spotify", modifier = GlanceModifier.height(120.dp).padding(5.dp, 2.dp),
+                                    Image(ImageProvider(R.drawable.photo_album_regular_240), "Spotify", modifier = GlanceModifier.defaultWeight().padding(5.dp, 2.dp),
                                         colorFilter = ColorFilter.tint(ColorProvider(Color.Black, Color.White)))
                                 }
                             }
@@ -272,7 +272,7 @@ class PlayerDataType(
                                 }
                             }
 
-                            Spacer(modifier = GlanceModifier.defaultWeight())
+                            Spacer(modifier = GlanceModifier.height(2.dp))
 
                             if (playerSize.isLarge()){
                                 OptionsRows(context = context,
@@ -282,7 +282,7 @@ class PlayerDataType(
                                     disabledActions = appState.disabledActions
                                 )
 
-                                Spacer(modifier = GlanceModifier.defaultWeight())
+                                Spacer(modifier = GlanceModifier.height(2.dp))
                             }
 
                             Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Vertical.CenterVertically) {
@@ -307,6 +307,8 @@ class PlayerDataType(
 
                                 Text(lengthText, style = TextStyle(color = ColorProvider(Color.Black, Color.White), fontFamily = FontFamily.Monospace, textAlign = TextAlign.Center, fontSize = 18.sp))
                             }
+
+                            if (playerSize.isLarge()) Spacer(modifier = GlanceModifier.height(5.dp))
                         }
                     }
                 } else if (playerSize == PlayerSize.MEDIUM || playerSize == PlayerSize.SMALL){

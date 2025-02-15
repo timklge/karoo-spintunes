@@ -16,7 +16,7 @@ class QueuePagingSource(
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, TrackObject> {
         return try {
             // Queue list is not provided with the local client
-            val response = webAPIClient.getPlayerQueue(ctx)
+            val response = webAPIClient.getPlayerQueue()
             val currentlyPlaying = if (apiClient is WebAPIClient){
                 listOfNotNull(response?.currentlyPlaying).map { ItemWrapper(it) }
             } else if (apiClient is LocalClient){

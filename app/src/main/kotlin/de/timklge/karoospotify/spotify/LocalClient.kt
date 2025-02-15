@@ -83,7 +83,7 @@ class LocalClient(val context: Context) : APIClient {
 
                     callbackFlow {
                         subscription.setEventCallback { playerState ->
-                            CoroutineScope(Dispatchers.Default).launch {
+                            CoroutineScope(Dispatchers.IO).launch {
                                 Log.d(KarooSpotifyExtension.TAG, "Player state: $playerState")
                                 send(playerState)
                             }
@@ -148,7 +148,7 @@ class LocalClient(val context: Context) : APIClient {
             suspendCoroutine { continuation ->
                 var resumed = false
 
-                CoroutineScope(Dispatchers.Default).launch {
+                CoroutineScope(Dispatchers.IO).launch {
                     connectionStateFlow.emit(LocalClientConnectionState.Connecting)
                 }
 
@@ -158,7 +158,7 @@ class LocalClient(val context: Context) : APIClient {
 
                         spotifyRemote = appRemote
 
-                        CoroutineScope(Dispatchers.Default).launch {
+                        CoroutineScope(Dispatchers.IO).launch {
                             Log.d(KarooSpotifyExtension.TAG, "Connected to Spotify")
                             connectionStateFlow.emit(LocalClientConnectionState.Connected)
                         }
@@ -175,7 +175,7 @@ class LocalClient(val context: Context) : APIClient {
                         }
                         val connectionState = LocalClientConnectionState.Failed(message)
 
-                        CoroutineScope(Dispatchers.Default).launch {
+                        CoroutineScope(Dispatchers.IO).launch {
                             connectionStateFlow.emit(connectionState)
                         }
 

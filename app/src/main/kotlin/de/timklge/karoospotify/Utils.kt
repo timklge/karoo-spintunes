@@ -18,6 +18,7 @@ fun KarooSystemService.makeHttpRequest(method: String, url: String, queue: Boole
     val flow = callbackFlow {
         Log.d(KarooSpotifyExtension.TAG, "$method request to ${url}...")
 
+
         val listenerId = addConsumer(
             OnHttpResponse.MakeHttpRequest(
                 method = method,
@@ -26,13 +27,19 @@ fun KarooSystemService.makeHttpRequest(method: String, url: String, queue: Boole
                 headers = headers,
                 body = body
             ),
-        ) { event: OnHttpResponse ->
-            // Log.d(KarooSpotifyExtension.TAG, "Http response event $event")
-            if (event.state is HttpResponseState.Complete){
-                trySend(event.state as HttpResponseState.Complete)
-                close()
+            onEvent = { event: OnHttpResponse ->
+                // Log.d(KarooSpotifyExtension.TAG, "Http response event $event")
+                if (event.state is HttpResponseState.Complete){
+                    trySend(event.state as HttpResponseState.Complete)
+                    close()
+                }
+            },
+            onError = { s: String ->
+                Log.e(KarooSpotifyExtension.TAG, "Failed to make http request: $s")
+                close(IllegalStateException(s))
+                Unit
             }
-        }
+        )
         awaitClose {
             removeConsumer(listenerId)
         }

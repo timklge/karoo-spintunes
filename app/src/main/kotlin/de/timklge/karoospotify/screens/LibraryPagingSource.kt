@@ -10,7 +10,7 @@ class LibraryPagingSource(val ctx: Context, val webAPIClient: WebAPIClient) : Pa
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, TrackObject> {
         return try {
             val nextPageNumber = params.key ?: 0
-            val response = webAPIClient.getLibraryItems(nextPageNumber * 50)
+            val response = webAPIClient.getLibraryItems(nextPageNumber * WebAPIClient.PAGE_SIZE)
             val responseItemCount = response?.items?.size ?: 0
 
             LoadResult.Page(

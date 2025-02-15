@@ -135,7 +135,7 @@ class KarooSpotifyExtension : KarooExtension("karoo-spotify", "1.0-beta1") {
         }
     }
 
-    private fun startPlayerAdvanceJob(): Job = CoroutineScope(Dispatchers.Default).launch {
+    private fun startPlayerAdvanceJob(): Job = CoroutineScope(Dispatchers.IO).launch {
         while(true) {
             try {
                 playerStateProvider.update { player ->
@@ -152,14 +152,14 @@ class KarooSpotifyExtension : KarooExtension("karoo-spotify", "1.0-beta1") {
                 delay(5_000)
             } catch(e: CancellationException){
                 Log.w(TAG, "Player advance job was cancelled")
-                startPlayerAdvanceJob()
+                break
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to update player progress", e)
             }
         }
     }
 
-    private fun startThumbnailCleanupJob(): Job = CoroutineScope(Dispatchers.Default).launch {
+    private fun startThumbnailCleanupJob(): Job = CoroutineScope(Dispatchers.IO).launch {
         while(true){
             try {
                 thumbnailCache.clearCache()
@@ -171,7 +171,7 @@ class KarooSpotifyExtension : KarooExtension("karoo-spotify", "1.0-beta1") {
         }
     }
 
-    private fun startLocalSpotifyJob(): Job = CoroutineScope(Dispatchers.Default).launch {
+    private fun startLocalSpotifyJob(): Job = CoroutineScope(Dispatchers.IO).launch {
         karooSystem.streamSettings()
             .distinctUntilChangedBy { it.useLocalSpotifyIfAvailable }
             .collectLatest { settings ->
@@ -210,13 +210,13 @@ class KarooSpotifyExtension : KarooExtension("karoo-spotify", "1.0-beta1") {
     }
 
     private fun startAutoVolumeJob(): Job {
-        return CoroutineScope(Dispatchers.Default).launch {
+        return CoroutineScope(Dispatchers.IO).launch {
             autoVolume.setAutoVolume()
         }
     }
 
     private fun startPlayerRefreshJob(): Job {
-        return CoroutineScope(Dispatchers.Default).launch {
+        return CoroutineScope(Dispatchers.IO).launch {
             apiClientProvider.streamLocalSpotifyIsEnabled().collectLatest {
                 Log.d(TAG, "Local Spotify enabled: $it")
 
