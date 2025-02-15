@@ -154,7 +154,9 @@ class ThumbnailCache(
 
                     Log.i(TAG, "Cached thumbnail for $url")
 
-                    playerStateProvider.update { state -> state }
+                    playerStateProvider.update { state ->
+                        state.copy(thumbnailFetchedAtMs = System.currentTimeMillis())
+                    }
                 }
             }
         } catch(e: Throwable){

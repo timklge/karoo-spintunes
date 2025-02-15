@@ -18,6 +18,7 @@ data class PlayerState(
     val playProgressInMs: Int? = null,
     val currentTrackLengthInMs: Int? = null,
     val volume: Float? = null,
+    val thumbnailFetchedAtMs: Long? = null,
 
     val disabledActions: MutableMap<PlayerAction, Boolean> = mutableMapOf()
 )
