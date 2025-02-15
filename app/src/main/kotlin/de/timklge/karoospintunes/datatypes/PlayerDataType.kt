@@ -305,6 +305,7 @@ class PlayerDataType(
                                 LinearProgressIndicator(
                                     progress = progress, modifier = GlanceModifier.defaultWeight().padding(horizontal = 5.dp, vertical = 2.dp).height(20.dp),
                                     color = ColorProvider(Color(context.getColor(R.color.colorPrimary)), Color(context.getColor(R.color.colorPrimary))),
+                                    backgroundColor = ColorProvider(Color(context.getColor(R.color.lightGray)), Color(context.getColor(R.color.darkGray)))
                                 )
 
                                 Text(lengthText, style = TextStyle(color = ColorProvider(Color.Black, Color.White), fontFamily = FontFamily.Monospace, textAlign = TextAlign.Center, fontSize = 18.sp))

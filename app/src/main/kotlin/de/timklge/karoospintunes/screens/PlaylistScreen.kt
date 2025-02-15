@@ -425,7 +425,7 @@ fun PlaylistScreen(
 
                                 Column(modifier = Modifier
                                     //.height(if(isEpisode) 100.dp else 50.dp)
-                                    //.weight(1.0f)
+                                    .weight(1.0f)
                                     , verticalArrangement = Arrangement.Center) {
 
                                     if (isEpisode){

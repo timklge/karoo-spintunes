@@ -11,9 +11,8 @@ This extension for Karoo devices adds a graphical data field with Spotify music 
 
 Compatible with Karoo 2 and Karoo 3 devices.
 
-![Menu](menu.jpg)
+![Playlists](playlists.jpg)
 ![Player](player.jpg)
-![Playlist](playlist.jpg)
 
 ## Features
 
