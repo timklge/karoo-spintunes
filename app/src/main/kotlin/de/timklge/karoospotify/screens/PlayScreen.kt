@@ -1,9 +1,12 @@
 package de.timklge.karoospotify.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -13,6 +16,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.SecondaryIndicator
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,10 +47,50 @@ fun PlayScreen(navController: NavHostController, karooSystemService: KarooSystem
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
+        Image(
+            painter = painterResource(R.drawable.spotify_full_logo_rgb_black),
+            contentDescription = "Spotify Logo",
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+                .padding(5.dp)
+        )
+
         // TopAppBar(title = { Text("Play") })
+        HorizontalPager(state = pagerState, modifier = Modifier.weight(1f)) {
+            when (it) {
+                0 -> {
+                    PlaylistsScreen(navController, PlaylistsScreenMode.Playlists)
+                }
+                /* 1 -> {
+                    BrowseScreen(navController, karooSystemService)
+                } */
+                1 -> {
+                    PlaylistsScreen(navController, PlaylistsScreenMode.Shows)
+                }
+            }
+        }
+
         TabRow(selectedTabIndex = pagerState.currentPage, modifier = Modifier
             .fillMaxWidth()
-            .wrapContentHeight()) {
+            .wrapContentHeight(),
+            divider = { }, // Remove default divider
+            indicator = { tabPositions ->
+                Box(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .tabIndicatorOffset(tabPositions[pagerState.currentPage])
+                            .align(androidx.compose.ui.Alignment.TopStart)
+                            .height(2.dp)
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.primary)
+                    )
+                }
+            }
+        ) {
+
             Tab(selected = selectedTabIndex == 0, text = { Text("Playlist") }, icon = { Icon(
                 painterResource(R.drawable.playlist_solid_132), contentDescription = "Playlists", modifier = Modifier
                     .size(30.dp)
@@ -62,20 +108,6 @@ fun PlayScreen(navController: NavHostController, karooSystemService: KarooSystem
                     .size(30.dp)
                     .padding(2.dp)
             ) }, onClick = { coroutineScope.launch { pagerState.animateScrollToPage(1) } })
-        }
-
-        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) {
-            when (it) {
-                0 -> {
-                    PlaylistsScreen(navController, PlaylistsScreenMode.Playlists)
-                }
-                /* 1 -> {
-                    BrowseScreen(navController, karooSystemService)
-                } */
-                1 -> {
-                    PlaylistsScreen(navController, PlaylistsScreenMode.Shows)
-                }
-            }
         }
     }
 }

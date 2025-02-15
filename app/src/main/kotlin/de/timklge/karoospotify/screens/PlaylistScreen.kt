@@ -135,13 +135,19 @@ fun PlaylistScreen(
 
     Scaffold(
         topBar = { TopAppBar(title = {
-            Text(when (playlistMode) {
-                is PlaylistScreenMode.Playlist -> playlistMode.playlistName ?: "Unknown"
-                PlaylistScreenMode.Library -> "Library"
-                PlaylistScreenMode.Queue -> "Queue"
-                PlaylistScreenMode.SavedEpisodes -> "Episodes"
-                is PlaylistScreenMode.Show -> "Show"
-            })
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Image(painter = painterResource(id = R.drawable.spotify), contentDescription = "Spotify logo", modifier = Modifier.size(40.dp))
+
+                Spacer(modifier = Modifier.size(5.dp))
+
+                Text(when (playlistMode) {
+                    is PlaylistScreenMode.Playlist -> playlistMode.playlistName ?: "Unknown"
+                    PlaylistScreenMode.Library -> "Library"
+                    PlaylistScreenMode.Queue -> "Queue"
+                    PlaylistScreenMode.SavedEpisodes -> "Episodes"
+                    is PlaylistScreenMode.Show -> "Show"
+                })
+            }
         }) },
         floatingActionButton = {
             if (playlistMode is PlaylistScreenMode.Playlist){
@@ -158,6 +164,12 @@ fun PlaylistScreen(
                                 val playRequest = PlayRequest(contextUri = "spotify:playlist:${playlistMode.playlistId}")
 
                                 webApiClient.play(playRequest)
+                            }
+
+                            playerStateProvider.update { playerState ->
+                                playerState.copy(
+                                    commandPending = true
+                                )
                             }
 
                             finish()
@@ -198,6 +210,12 @@ fun PlaylistScreen(
                                             )
                                         } else {
                                             apiClient?.playUris(PlayRequestUris(uris = selectedUri))
+                                        }
+
+                                        playerStateProvider.update { playerState ->
+                                            playerState.copy(
+                                                commandPending = true
+                                            )
                                         }
 
                                         finish()
@@ -392,7 +410,7 @@ fun PlaylistScreen(
                                 })
                             {
 
-                                val thumbnail = thumbnails[item?.getDefinedTrack()?.images?.last()?.url ?: item?.getDefinedTrack()?.album?.images?.last()?.url]
+                                val thumbnail = thumbnails[item?.getDefinedTrack()?.images?.lastOrNull()?.url ?: item?.getDefinedTrack()?.album?.images?.lastOrNull()?.url]
                                 if (thumbnail != null){
                                     Image(thumbnail, contentDescription = item?.getDefinedTrack()?.name, modifier = Modifier
                                         .size(50.dp)

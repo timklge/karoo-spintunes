@@ -82,7 +82,7 @@ class KarooSpotifyExtension : KarooExtension("karoo-spotify", "1.0-beta1") {
             flow {
                 while (true) {
                     emit(Unit)
-                    delay(60 * 1_000)
+                    delay(40 * 1_000)
                 }
             }
         }

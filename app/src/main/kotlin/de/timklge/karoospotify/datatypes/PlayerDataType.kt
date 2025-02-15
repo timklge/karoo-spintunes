@@ -303,7 +303,10 @@ class PlayerDataType(
                                 Text(progressText, style = TextStyle(color = ColorProvider(Color.Black, Color.White), fontFamily = FontFamily.Monospace, textAlign = TextAlign.Center, fontSize = 18.sp))
 
                                 val progress = (appState.playProgressInMs?.toFloat() ?: 0.0f) / (appState.currentTrackLengthInMs?.toFloat() ?: 1.0f)
-                                LinearProgressIndicator(progress = progress, modifier = GlanceModifier.defaultWeight().padding(horizontal = 5.dp, vertical = 2.dp).height(20.dp))
+                                LinearProgressIndicator(
+                                    progress = progress, modifier = GlanceModifier.defaultWeight().padding(horizontal = 5.dp, vertical = 2.dp).height(20.dp),
+                                    color = ColorProvider(Color(context.getColor(R.color.colorPrimary)), Color(context.getColor(R.color.colorPrimary))),
+                                )
 
                                 Text(lengthText, style = TextStyle(color = ColorProvider(Color.Black, Color.White), fontFamily = FontFamily.Monospace, textAlign = TextAlign.Center, fontSize = 18.sp))
                             }
