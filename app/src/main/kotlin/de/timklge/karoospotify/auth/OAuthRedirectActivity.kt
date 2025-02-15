@@ -78,7 +78,13 @@ fun OAuthRedirectScreen(intent: Intent, finish: () -> Unit) {
                         }
                     }
                 }
+            } else {
+                dialogMessage = "Failed to authorize with Spotify"
+                dialogVisible = true
             }
+        } else {
+            dialogMessage = "Failed to authorize with Spotify"
+            dialogVisible = true
         }
     }
 

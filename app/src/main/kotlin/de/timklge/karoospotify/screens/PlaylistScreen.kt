@@ -10,17 +10,18 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -98,7 +99,7 @@ fun PlaylistScreen(
     // TODO Should queue be disabled in local mode? No, it should be enabled and still use the web API as its unsupported with the android SDK
     val apiClient by apiClientProvider.getActiveAPIInstance().collectAsStateWithLifecycle(initialValue = null)
 
-    var playStarted = false
+    var playStarted by remember { mutableStateOf(false) }
 
     suspend fun startPlayback(item: TrackObject?){
         if (playStarted) return
@@ -125,11 +126,11 @@ fun PlaylistScreen(
                     commandPending = true
                 )
             }
+
+            finish()
         } finally {
             playStarted = false
         }
-
-        finish()
     }
 
     Scaffold(
@@ -144,20 +145,26 @@ fun PlaylistScreen(
         }) },
         floatingActionButton = {
             if (playlistMode is PlaylistScreenMode.Playlist){
-                FloatingActionButton(onClick = {
-                    CoroutineScope(Dispatchers.IO).launch {
-                        if (apiClient is LocalClient){
-                            val playlistUrl = "spotify:playlist:${playlistMode.playlistId}"
+                Button(modifier = Modifier.defaultMinSize(minWidth = 56.dp, minHeight = 56.dp), shape = CircleShape, enabled = !playStarted, onClick = {
+                    CoroutineScope(Dispatchers.Main).launch {
+                        try {
+                            playStarted = true
 
-                            apiClient?.playUris(PlayRequestUris(listOf(playlistUrl)))
-                        } else {
-                            val playRequest = PlayRequest(contextUri = "spotify:playlist:${playlistMode.playlistId}")
+                            if (apiClient is LocalClient){
+                                val playlistUrl = "spotify:playlist:${playlistMode.playlistId}"
 
-                            webApiClient.play(playRequest)
+                                apiClient?.playUris(PlayRequestUris(listOf(playlistUrl)))
+                            } else {
+                                val playRequest = PlayRequest(contextUri = "spotify:playlist:${playlistMode.playlistId}")
+
+                                webApiClient.play(playRequest)
+                            }
+
+                            finish()
+                        } finally {
+                            playStarted = false
                         }
                     }
-
-                    finish()
                 }) {
                     Icon(painter = painterResource(id = R.drawable.play_regular_132), contentDescription = "Play")
                 }
@@ -171,25 +178,33 @@ fun PlaylistScreen(
                             .size(50.dp)
                             .padding(horizontal = 10.dp)
                             .clickable {
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    val selectedUri =
-                                        selected.mapNotNull { it.getDefinedTrack()?.uri }
+                                if (playStarted) return@clickable
 
-                                    if (playlistMode is PlaylistScreenMode.Playlist) {
-                                        val contextUri =
-                                            "spotify:playlist:${playlistMode.playlistId}"
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    try {
+                                        playStarted = true
 
-                                        apiClient?.play(
-                                            PlayRequest(
-                                                uris = selectedUri,
-                                                contextUri = contextUri
+                                        val selectedUri = selected.mapNotNull { it.getDefinedTrack()?.uri }
+
+                                        if (playlistMode is PlaylistScreenMode.Playlist) {
+                                            val contextUri =
+                                                "spotify:playlist:${playlistMode.playlistId}"
+
+                                            apiClient?.play(
+                                                PlayRequest(
+                                                    uris = selectedUri,
+                                                    contextUri = contextUri
+                                                )
                                             )
-                                        )
-                                    } else {
-                                        apiClient?.playUris(PlayRequestUris(uris = selectedUri))
+                                        } else {
+                                            apiClient?.playUris(PlayRequestUris(uris = selectedUri))
+                                        }
+
+                                        finish()
+                                    } finally {
+                                        playStarted = false
                                     }
                                 }
-                                finish()
                             }, painter = painterResource(id = R.drawable.play_regular_132), contentDescription = "Play")
                     }
 
@@ -197,14 +212,22 @@ fun PlaylistScreen(
                         .size(50.dp)
                         .padding(horizontal = 10.dp)
                         .clickable {
-                            CoroutineScope(Dispatchers.IO).launch {
-                                val selectedUri = selected.mapNotNull { it.getDefinedTrack()?.uri }
+                            if (playStarted) return@clickable
 
-                                selectedUri.forEach { uri ->
-                                    apiClient?.addToQueue(uri)
+                            CoroutineScope(Dispatchers.Main).launch {
+                                try {
+                                    playStarted = true
+                                    val selectedUri = selected.mapNotNull { it.getDefinedTrack()?.uri }
+
+                                    selectedUri.forEach { uri ->
+                                        apiClient?.addToQueue(uri)
+                                    }
+
+                                    finish()
+                                } finally {
+                                    playStarted = false
                                 }
                             }
-                            finish()
                         }, painter = painterResource(id = R.drawable.add_to_queue_regular_132), contentDescription = "Add to queue")
 
                     BottomAppBar {
@@ -212,33 +235,40 @@ fun PlaylistScreen(
                             .size(50.dp)
                             .padding(horizontal = 10.dp)
                             .clickable {
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    when (apiClient) {
-                                        is WebAPIClient -> {
-                                            val selectedTrackIds =
-                                                selected.mapNotNull { it.getDefinedTrack()?.id }
+                                CoroutineScope(Dispatchers.Main).launch {
+                                    try {
+                                        playStarted = true
 
-                                            (apiClient as WebAPIClient).addTrackToLibrary(
-                                                selectedTrackIds
-                                            )
+                                        when (apiClient) {
+                                            is WebAPIClient -> {
+                                                val selectedTrackIds =
+                                                    selected.mapNotNull { it.getDefinedTrack()?.id }
+
+                                                (apiClient as WebAPIClient).addTrackToLibrary(
+                                                    selectedTrackIds
+                                                )
+                                            }
+
+                                            is LocalClient -> {
+                                                val selectedTrackUris =
+                                                    selected.mapNotNull { it.getDefinedTrack()?.uri }
+
+                                                (apiClient as LocalClient).addTrackToLibrary(
+                                                    ctx,
+                                                    selectedTrackUris
+                                                )
+                                            }
+
+                                            else -> {
+                                                error("Unknown API client")
+                                            }
                                         }
 
-                                        is LocalClient -> {
-                                            val selectedTrackUris =
-                                                selected.mapNotNull { it.getDefinedTrack()?.uri }
-
-                                            (apiClient as LocalClient).addTrackToLibrary(
-                                                ctx,
-                                                selectedTrackUris
-                                            )
-                                        }
-
-                                        else -> {
-                                            error("Unknown API client")
-                                        }
+                                        finish()
+                                    } finally {
+                                        playStarted = false
                                     }
                                 }
-                                finish()
                             }, painter = painterResource(id = R.drawable.like_regular_132), contentDescription = "Add to library")
                     }
                 }
