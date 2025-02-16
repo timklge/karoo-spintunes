@@ -2,6 +2,7 @@
 agp = "8.5.2"
 datastorePreferences = "1.1.1"
 gson = "2.10.1"
+jacksonDatabind = "2.15.2"
 kotlin = "2.0.0"
 koin-bom = "4.1.0-Beta4"
 androidxCore = "1.15.0"
@@ -22,6 +23,7 @@ jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = 
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 
 [libraries]
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jacksonDatabind" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin-bom" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin-bom" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }

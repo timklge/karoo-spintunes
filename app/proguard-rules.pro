@@ -19,3 +19,10 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Exclude all com.spotify classes from minification.
+-keep class com.spotify.** { *; }
+
+-dontwarn com.google.errorprone.annotations.**
+-dontwarn com.spotify.base.annotations.**
+-dontwarn javax.annotation.**

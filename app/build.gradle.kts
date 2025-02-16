@@ -84,4 +84,8 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
+
+    // Jackson databind provides the StdSerializer and StdDeserializer classes.
+    implementation(libs.jackson.databind)
+
 }
