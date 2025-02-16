@@ -17,8 +17,8 @@ android {
         minSdk = 26
         //noinspection ExpiredTargetSdkVersion
         targetSdk = 31
-        versionCode = 2
-        versionName = "1.0-beta2"
+        versionCode = 3
+        versionName = "1.0-beta3"
 
         val env: MutableMap<String, String> = System.getenv()
         val clientId = env["SPOTIFY_CLIENT_ID"] ?: project.findProperty("SPOTIFY_CLIENT_ID").toString()

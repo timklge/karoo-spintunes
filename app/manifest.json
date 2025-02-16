@@ -3,9 +3,9 @@
   "packageName": "de.timklge.karoospintunes",
   "iconUrl": "https://github.com/timklge/karoo-spintunes/releases/latest/download/karoo-spintunes.png",
   "latestApkUrl": "https://github.com/timklge/karoo-spintunes/releases/latest/download/app-release.apk",
-  "latestVersion": "1.0-beta2",
-  "latestVersionCode": 2,
+  "latestVersion": "1.0-beta3",
+  "latestVersionCode": 3,
   "developer": "timklge",
-  "description": "Provides Spotify media controls via Spotify Connect",
+  "description": "Provides media controls for Spotify via Spotify Connect or via the Spotify app if sideloaded",
   "releaseNotes": "Initial release."
 }
