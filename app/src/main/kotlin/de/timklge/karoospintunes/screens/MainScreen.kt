@@ -308,20 +308,22 @@ fun MainScreen() {
                 Text(modifier = Modifier.padding(5.dp), text = "Could not read device status. Is your Karoo updated?")
             }
 
-            when (connectionState){
-                is LocalClientConnectionState.Connecting -> {
-                    Text("Trying to connect to local Spotify client...")
+            if (connectionState != LocalClientConnectionState.NotInstalled && localSpotifyIsInstalled && settingsInitialized){
+                when (connectionState){
+                    is LocalClientConnectionState.Connecting -> {
+                        Text("Trying to connect to local Spotify client...")
+                    }
+                    is LocalClientConnectionState.Connected -> {
+                        Text("Connected to local Spotify client.")
+                    }
+                    is LocalClientConnectionState.Failed -> {
+                        Text("Local Spotify connection failed: ${(connectionState as LocalClientConnectionState.Failed).message}")
+                    }
+                    is LocalClientConnectionState.NotInstalled -> {
+                        Text("Local Spotify app is not installed.")
+                    }
+                    else -> {}
                 }
-                is LocalClientConnectionState.Connected -> {
-                    Text("Connected to local Spotify client.")
-                }
-                is LocalClientConnectionState.Failed -> {
-                    Text("Local Spotify connection failed: ${(connectionState as LocalClientConnectionState.Failed).message}")
-                }
-                is LocalClientConnectionState.NotInstalled -> {
-                    Text("Local Spotify app is not installed.")
-                }
-                else -> {}
             }
         }
     }
