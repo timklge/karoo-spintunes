@@ -9,6 +9,7 @@ import de.timklge.karoospintunes.KarooSpintunesExtension.Companion.TAG
 import de.timklge.karoospintunes.auth.HttpException
 import de.timklge.karoospintunes.auth.OAuth2Client
 import de.timklge.karoospintunes.datatypes.PlayerDataType
+import de.timklge.karoospintunes.datatypes.PlayerViewProvider
 import de.timklge.karoospintunes.screens.SpintuneSettings
 import de.timklge.karoospintunes.spotify.APIClientProvider
 import de.timklge.karoospintunes.spotify.LocalClient
@@ -148,15 +149,16 @@ val appModule = module {
     singleOf(::AutoVolume)
     singleOf(::LocalClient)
     singleOf(::PlayerStateProvider)
+    singleOf(::PlayerViewProvider)
 }
 
-class KarooSpotifyApplication : Application() {
+class KarooSpintunesApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
         startKoin {
             androidLogger()
-            androidContext(this@KarooSpotifyApplication)
+            androidContext(this@KarooSpintunesApplication)
             modules(appModule)
         }
     }

@@ -1,11 +1,15 @@
 package de.timklge.karoospintunes.screens
 
+import android.widget.FrameLayout
+import android.widget.RemoteViews
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.absolutePadding
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,6 +30,7 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -41,6 +47,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.glance.GlanceModifier
+import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -50,12 +60,16 @@ import de.timklge.karoospintunes.AutoVolumeConfig
 import de.timklge.karoospintunes.KarooSystemServiceProvider
 import de.timklge.karoospintunes.auth.OAuth2Client
 import de.timklge.karoospintunes.auth.TokenResponse
+import de.timklge.karoospintunes.datatypes.PlayerSize
+import de.timklge.karoospintunes.datatypes.PlayerViewProvider
 import de.timklge.karoospintunes.spotify.LocalClient
 import de.timklge.karoospintunes.spotify.LocalClientConnectionState
 import io.hammerhead.karooext.models.HardwareType
 import io.hammerhead.karooext.models.UserProfile
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -68,6 +82,7 @@ fun MainScreen() {
     val autoVolume = koinInject<AutoVolume>()
     val karooSystemServiceProvider = koinInject<KarooSystemServiceProvider>()
     val oauth2Client = koinInject<OAuth2Client>()
+    val viewProvider = koinInject<PlayerViewProvider>()
 
     val ctx = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -82,6 +97,7 @@ fun MainScreen() {
     val connectionState by localClient.connectionState.collectAsStateWithLifecycle(initialValue = LocalClientConnectionState.Idle)
     var enableLocalSpotify by remember { mutableStateOf(false) }
     var localSpotifyIsInstalled by remember { mutableStateOf(false) }
+    var playerPreviewDialogVisible by remember { mutableStateOf(false) }
 
     var isImperial by remember { mutableStateOf(false) }
 
@@ -119,21 +135,26 @@ fun MainScreen() {
     }
 
     LaunchedEffect(Unit) {
+        karooSystemServiceProvider.streamSettings().collect { settings ->
+            welcomeDialogVisible = !settings.welcomeDialogAccepted
+            token = settings.token
+            settingsInitialized = true
+            downloadThumbnails = settings.downloadThumbnailsViaCompanion
+            enableLocalSpotify = settings.useLocalSpotifyIfAvailable
+            autoVolumeEnabled = settings.autoVolumeConfig.enabled
+            autoVolumeMinVolume = (settings.autoVolumeConfig.minVolume * 100).roundToInt().toString()
+            autoVolumeMaxVolume = (settings.autoVolumeConfig.maxVolume * 100).roundToInt().toString()
+            autoVolumeMinSpeed = (if(isImperial) settings.autoVolumeConfig.minVolumeAtSpeed * 2.23694f else settings.autoVolumeConfig.minVolumeAtSpeed * 3.6f).roundToInt().toString()
+            autoVolumeMaxSpeed = (if(isImperial) settings.autoVolumeConfig.maxVolumeAtSpeed * 2.23694f else settings.autoVolumeConfig.maxVolumeAtSpeed * 3.6f).roundToInt().toString()
+        }
+    }
+
+    LaunchedEffect(Unit) {
         karooSystemServiceProvider.streamUserProfile()
             .combine(karooSystemServiceProvider.streamSettings()) { profile, settings -> profile to settings}
             .distinctUntilChanged()
-            .collect { (profile, settings) ->
-                welcomeDialogVisible = !settings.welcomeDialogAccepted
-                token = settings.token
-                settingsInitialized = true
-                downloadThumbnails = settings.downloadThumbnailsViaCompanion
-                enableLocalSpotify = settings.useLocalSpotifyIfAvailable
+            .collect { (profile, _) ->
                 isImperial = profile.preferredUnit.distance == UserProfile.PreferredUnit.UnitType.IMPERIAL
-                autoVolumeEnabled = settings.autoVolumeConfig.enabled
-                autoVolumeMinVolume = (settings.autoVolumeConfig.minVolume * 100).roundToInt().toString()
-                autoVolumeMaxVolume = (settings.autoVolumeConfig.maxVolume * 100).roundToInt().toString()
-                autoVolumeMinSpeed = (if(isImperial) settings.autoVolumeConfig.minVolumeAtSpeed * 2.23694f else settings.autoVolumeConfig.minVolumeAtSpeed * 3.6f).roundToInt().toString()
-                autoVolumeMaxSpeed = (if(isImperial) settings.autoVolumeConfig.maxVolumeAtSpeed * 2.23694f else settings.autoVolumeConfig.maxVolumeAtSpeed * 3.6f).roundToInt().toString()
             }
     }
 
@@ -289,6 +310,18 @@ fun MainScreen() {
                     Text("Save")
                 }
 
+                if (token != null && settingsInitialized){
+                    FilledTonalButton(modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp), onClick = {
+                        playerPreviewDialogVisible = true
+                    }) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = "Preview")
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text("Preview Player")
+                    }
+                }
+
                 FilledTonalButton(modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp), onClick = {
@@ -354,5 +387,30 @@ fun MainScreen() {
                 }
             }
         )
+    }
+
+    if (playerPreviewDialogVisible){
+        Dialog(onDismissRequest = { playerPreviewDialogVisible = false }){
+            Surface(modifier = Modifier.padding(1.dp)) {
+                Column {
+                    val view: RemoteViews? by viewProvider.provideView(PlayerSize.FULL_PAGE).collectAsStateWithLifecycle(initialValue = null)
+
+                    AndroidView(
+                        factory = { context ->
+                            FrameLayout(context).apply {
+                                val addedView = view?.apply(context, this)
+                                addedView?.let { v -> addView(v) }
+                            }
+                        },
+                        update = { frameLayout ->
+                            frameLayout.removeAllViews()
+                            val newView = view?.apply(frameLayout.context, frameLayout)
+                            newView?.let { v -> frameLayout.addView(v) }
+                        },
+                        modifier = Modifier.fillMaxWidth().fillMaxHeight()
+                    )
+                }
+            }
+        }
     }
 }

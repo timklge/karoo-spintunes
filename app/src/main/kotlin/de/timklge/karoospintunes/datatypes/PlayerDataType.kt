@@ -6,9 +6,7 @@ import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.glance.ColorFilter
 import androidx.glance.GlanceModifier
@@ -18,26 +16,15 @@ import androidx.glance.LocalContext
 import androidx.glance.action.Action
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.ExperimentalGlanceRemoteViewsApi
-import androidx.glance.appwidget.GlanceRemoteViews
-import androidx.glance.appwidget.LinearProgressIndicator
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Alignment
-import androidx.glance.layout.Column
 import androidx.glance.layout.Row
-import androidx.glance.layout.Spacer
-import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
-import androidx.glance.layout.width
-import androidx.glance.text.FontFamily
-import androidx.glance.text.FontWeight
-import androidx.glance.text.Text
-import androidx.glance.text.TextAlign
-import androidx.glance.text.TextStyle
 import de.timklge.karoospintunes.KarooSpintunesExtension
 import de.timklge.karoospintunes.R
 import de.timklge.karoospintunes.datatypes.actions.FastForwardAction
@@ -53,12 +40,9 @@ import de.timklge.karoospintunes.datatypes.actions.ToggleRepeatAction
 import de.timklge.karoospintunes.datatypes.actions.ToggleShuffleAction
 import de.timklge.karoospintunes.screens.PlayActivity
 import de.timklge.karoospintunes.screens.QueueActivity
-import de.timklge.karoospintunes.spotify.APIClientProvider
 import de.timklge.karoospintunes.spotify.PlayerAction
 import de.timklge.karoospintunes.spotify.PlayerState
-import de.timklge.karoospintunes.spotify.PlayerStateProvider
 import de.timklge.karoospintunes.spotify.RepeatState
-import de.timklge.karoospintunes.spotify.ThumbnailCache
 import io.hammerhead.karooext.extension.DataTypeImpl
 import io.hammerhead.karooext.internal.Emitter
 import io.hammerhead.karooext.internal.ViewEmitter
@@ -70,7 +54,6 @@ import io.hammerhead.karooext.models.ViewConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 @Composable fun ActionButton(
@@ -97,14 +80,14 @@ import kotlinx.coroutines.launch
 }
 
 @Composable
-fun PlayButton(playerState: PlayerState, playerSize: PlayerDataType.PlayerSize, disabled: Boolean) {
+fun PlayButton(playerState: PlayerState, playerSize: PlayerSize, disabled: Boolean) {
     if (playerState.isPlaying == true) {
         ActionButton(R.drawable.pause_regular_132, disabled) { actionRunCallback(PauseAction::class.java) }
     } else if(playerState.isPlaying == false) {
         ActionButton(R.drawable.play_regular_132, disabled) { actionRunCallback(PlayAction::class.java) }
     }
 
-    if (playerState.isPlaying != null && playerSize == PlayerDataType.PlayerSize.SMALL){
+    if (playerState.isPlaying != null && playerSize == PlayerSize.SMALL){
         ActionButton(R.drawable.dots_vertical_rounded_regular_132, disabled) { actionRunCallback(ToggleOptionsMenuCallback::class.java)}
     }
 }
@@ -156,12 +139,8 @@ fun OptionsRows(context: Context, playerState: PlayerState, showToggle: Boolean,
 
 @OptIn(ExperimentalGlanceRemoteViewsApi::class)
 class PlayerDataType(
-    private val apiClientProvider: APIClientProvider,
-    private val thumbnailCache: ThumbnailCache,
-    private val playerStateProvider: PlayerStateProvider
+    val playerViewProvider: PlayerViewProvider
 ) : DataTypeImpl("karoo-spintunes", "player") {
-    private val glance = GlanceRemoteViews()
-
     // FIXME: Remove. Currently, the data field will permanently show "no sensor" if no data stream is provided
     override fun startStream(emitter: Emitter<StreamState>) {
         val job = CoroutineScope(Dispatchers.IO).launch {
@@ -170,15 +149,6 @@ class PlayerDataType(
         emitter.setCancellable {
             job.cancel()
         }
-    }
-
-    enum class PlayerSize {
-        SINGLE_FIELD,
-        SMALL,
-        MEDIUM,
-        FULL_PAGE; /* Full page */
-
-        fun isLarge(): Boolean = (this == FULL_PAGE || this == MEDIUM)
     }
 
     override fun startView(context: Context, config: ViewConfig, emitter: ViewEmitter) {
@@ -200,160 +170,8 @@ class PlayerDataType(
         }
 
         val viewJob = CoroutineScope(Dispatchers.IO).launch {
-            playerStateProvider.state
-                .combine(apiClientProvider.getActiveAPIInstance()) { state, apiClient ->
-                    state to apiClient
-                }
-                .collect { (appState, apiClient) ->
-                // Log.d(KarooSpotifyExtension.TAG, "Updating player view with $appState")
-
-                // TODO Is it worth it to download the higher resolution thumbnails? Can take ~ 20 s via companion...
-                val thumbnailUrl = when(playerSize){
-                    PlayerSize.SINGLE_FIELD, PlayerSize.SMALL -> null
-                    PlayerSize.MEDIUM -> appState.isPlayingTrackThumbnailUrls?.last()
-                    PlayerSize.FULL_PAGE -> appState.isPlayingTrackThumbnailUrls?.getOrNull(1) ?: appState.isPlayingTrackThumbnailUrls?.last()
-                }
-
-                val cachedThumbnail = thumbnailUrl?.let { url ->
-                    CoroutineScope(Dispatchers.IO).launch {
-                        thumbnailCache.ensureThumbnailIsInCache(thumbnailUrl)
-                    }
-
-                    thumbnailCache.getThumbnailFromInMemoryCache(url)
-                }
-
-                val buttonsDisabled = appState.commandPending || appState.requestPending > 0 || appState.isPlaying == null
-
-                val result = if (playerSize.isLarge() || (!appState.isInOptionsMenu && (playerSize == PlayerSize.MEDIUM || playerSize == PlayerSize.SMALL))){
-                    glance.compose(context, DpSize.Unspecified) {
-                        Column(
-                            modifier = GlanceModifier.fillMaxSize().padding(2.dp),
-                            horizontalAlignment = Alignment.Horizontal.CenterHorizontally
-                        ) {
-                            if (playerSize == PlayerSize.MEDIUM || playerSize == PlayerSize.FULL_PAGE) {
-                                Row(modifier = GlanceModifier.fillMaxWidth().height(40.dp), verticalAlignment = Alignment.Vertical.CenterVertically, horizontalAlignment = Alignment.Horizontal.CenterHorizontally) {
-                                    Image(ImageProvider(R.drawable.spotify_full_logo_rgb_black), "Spotify", modifier = GlanceModifier.height(40.dp).padding(2.dp),
-                                        colorFilter = ColorFilter.tint(ColorProvider(Color.Black, Color.White)))
-                                }
-                            }
-
-                            if (playerSize == PlayerSize.FULL_PAGE) {
-                                val isThumbnailAvailable = appState.isPlayingTrackThumbnailUrls?.isNotEmpty() == true && cachedThumbnail != null
-
-                                if (isThumbnailAvailable){
-                                    cachedThumbnail?.let { thumbnail ->
-                                        Image(ImageProvider(thumbnail), "Thumbnail", modifier = GlanceModifier.defaultWeight().padding(5.dp, 2.dp))
-                                    }
-                                } else {
-                                    Image(ImageProvider(R.drawable.photo_album_regular_240), "Spotify", modifier = GlanceModifier.defaultWeight().padding(5.dp, 2.dp),
-                                        colorFilter = ColorFilter.tint(ColorProvider(Color.Black, Color.White)))
-                                }
-                            }
-
-                            Row(modifier = GlanceModifier.fillMaxWidth().height(50.dp), verticalAlignment = Alignment.Vertical.Top) {
-                                if (playerSize == PlayerSize.MEDIUM && appState.isPlayingTrackThumbnailUrls?.isNotEmpty() == true){
-                                    cachedThumbnail?.let { thumbnail ->
-                                        Image(ImageProvider(thumbnail), "Thumbnail", modifier = GlanceModifier.size(45.dp).padding(2.dp))
-                                    }
-                                }
-
-                                val artistName = appState.isPlayingArtistName ?: appState.isPlayingShowName
-
-                                Column(modifier = if(playerSize == PlayerSize.FULL_PAGE) GlanceModifier.width(200.dp) else GlanceModifier.width(150.dp)) {
-                                    Text(appState.isPlayingTrackName ?: "Unknown", style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = ColorProvider(Color.Black, Color.White)), maxLines = 1)
-                                    Text(artistName ?: "Waiting for playback...", style = TextStyle(fontSize = 14.sp, color = ColorProvider(Color.Black, Color.White)), maxLines = 1)
-                                }
-
-                                Spacer(modifier = GlanceModifier.defaultWeight())
-
-                                Row(verticalAlignment = Alignment.Vertical.CenterVertically, modifier = GlanceModifier.height(50.dp)) {
-                                    PlayButton(appState, playerSize, buttonsDisabled)
-                                }
-                            }
-
-                            Spacer(modifier = GlanceModifier.height(2.dp))
-
-                            if (playerSize.isLarge()){
-                                OptionsRows(context = context,
-                                    playerState = appState,
-                                    showToggle = false,
-                                    buttonsDisabled = buttonsDisabled,
-                                    disabledActions = appState.disabledActions
-                                )
-
-                                Spacer(modifier = GlanceModifier.height(2.dp))
-                            }
-
-                            Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Vertical.CenterVertically) {
-                                val progressText = appState.playProgressInMs?.let {
-                                    val minutes = it / 60000
-                                    val seconds = (it % 60000) / 1000
-
-                                    String.format(null, "%d:%02d", minutes, seconds)
-                                } ?: "0:00"
-
-                                val lengthText = appState.currentTrackLengthInMs?.let {
-                                    val minutes = it / 60000
-                                    val seconds = (it % 60000) / 1000
-
-                                    String.format(null, "%d:%02d", minutes, seconds)
-                                } ?: "0:00"
-
-                                Text(progressText, style = TextStyle(color = ColorProvider(Color.Black, Color.White), fontFamily = FontFamily.Monospace, textAlign = TextAlign.Center, fontSize = 18.sp))
-
-                                val progress = (appState.playProgressInMs?.toFloat() ?: 0.0f) / (appState.currentTrackLengthInMs?.toFloat() ?: 1.0f)
-                                LinearProgressIndicator(
-                                    progress = progress, modifier = GlanceModifier.defaultWeight().padding(horizontal = 5.dp, vertical = 2.dp).height(20.dp),
-                                    color = ColorProvider(Color(context.getColor(R.color.colorPrimary)), Color(context.getColor(R.color.colorPrimary))),
-                                    backgroundColor = ColorProvider(Color(context.getColor(R.color.lightGray)), Color(context.getColor(R.color.darkGray)))
-                                )
-
-                                Text(lengthText, style = TextStyle(color = ColorProvider(Color.Black, Color.White), fontFamily = FontFamily.Monospace, textAlign = TextAlign.Center, fontSize = 18.sp))
-                            }
-
-                            if (playerSize.isLarge()) Spacer(modifier = GlanceModifier.height(5.dp))
-                        }
-                    }
-                } else if (playerSize == PlayerSize.MEDIUM || playerSize == PlayerSize.SMALL){
-                    glance.compose(context, DpSize.Unspecified) {
-                        Column(
-                            modifier = GlanceModifier.fillMaxSize().padding(2.dp),
-                            verticalAlignment = Alignment.Vertical.CenterVertically
-                        ) {
-                            OptionsRows(context = context,
-                                playerState = appState,
-                                showToggle = true,
-                                buttonsDisabled = buttonsDisabled,
-                                disabledActions = appState.disabledActions)
-                        }
-                    }
-                } else {
-                    glance.compose(context, DpSize.Unspecified) {
-                        Column(
-                            modifier = GlanceModifier.fillMaxSize().padding(2.dp),
-                            verticalAlignment = Alignment.Vertical.CenterVertically
-                        ) {
-                            Text(appState.isPlayingTrackName ?: "Unknown", style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Bold, color = ColorProvider(Color.Black, Color.White)), maxLines = 1)
-                            Text(appState.isPlayingArtistName ?: "Waiting for playback...", style = TextStyle(fontSize = 14.sp, color = ColorProvider(Color.Black, Color.White)), maxLines = 1)
-
-                            Row(
-                                modifier = GlanceModifier.fillMaxWidth().padding(2.dp),
-                                verticalAlignment = Alignment.Vertical.CenterVertically,
-                                horizontalAlignment = Alignment.Horizontal.CenterHorizontally
-                            ) {
-                                PlayButton(appState, playerSize, buttonsDisabled)
-
-                                Image(ImageProvider(R.drawable.skip_next_regular_132), "Next", modifier = GlanceModifier.size(40.dp).padding(10.dp).clickable(actionRunCallback(
-                                    NextAction::class.java)), colorFilter = ColorFilter.tint(ColorProvider(Color.Black, Color.White)))
-                            }
-
-                            val progress = (appState.playProgressInMs?.toFloat() ?: 0.0f) / (appState.currentTrackLengthInMs?.toFloat() ?: 1.0f)
-                            LinearProgressIndicator(progress = progress, modifier = GlanceModifier.fillMaxWidth().padding(2.dp).height(10.dp))
-                        }
-                    }
-                }
-
-                emitter.updateView(result.remoteViews)
+            playerViewProvider.provideView(playerSize).collect { views ->
+                emitter.updateView(views)
             }
         }
         emitter.setCancellable {
