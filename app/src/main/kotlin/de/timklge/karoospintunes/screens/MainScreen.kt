@@ -161,7 +161,7 @@ fun MainScreen() {
     Column(modifier = Modifier
         .fillMaxSize()
         .background(MaterialTheme.colorScheme.background)) {
-        TopAppBar(title = { Text("Spintuness") })
+        TopAppBar(title = { Text("Spintunes") })
         Column(modifier = Modifier
             .padding(10.dp)
             .verticalScroll(rememberScrollState())

@@ -93,7 +93,7 @@ fun OAuthRedirectScreen(intent: Intent, finish: () -> Unit) {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        TopAppBar(title = { Text("Spotify") })
+        TopAppBar(title = { Text("Spintunes") })
         Column(
             modifier = Modifier
                 .padding(10.dp)
