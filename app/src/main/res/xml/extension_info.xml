@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ExtensionInfo
     displayName="@string/extension_name"
-    icon="@drawable/spotify"
+    icon="@drawable/music_regular_132"
     id="karoo-spintunes"
     scansDevices="false">
     <DataType
         description="@string/player_description"
         displayName="@string/player"
         graphical="true"
-        icon="@drawable/spotify"
+        icon="@drawable/music_regular_132"
         typeId="player" />
 </ExtensionInfo>
