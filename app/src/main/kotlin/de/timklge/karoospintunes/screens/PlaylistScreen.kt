@@ -141,12 +141,12 @@ fun PlaylistScreen(
                 Spacer(modifier = Modifier.size(5.dp))
 
                 Text(when (playlistMode) {
-                    is PlaylistScreenMode.Playlist -> playlistMode.playlistName ?: "Unknown"
+                    is PlaylistScreenMode.Playlist -> playlistMode.playlistName ?: "Playlist"
                     PlaylistScreenMode.Library -> "Library"
                     PlaylistScreenMode.Queue -> "Queue"
                     PlaylistScreenMode.SavedEpisodes -> "Episodes"
-                    is PlaylistScreenMode.Show -> "Show"
-                })
+                    is PlaylistScreenMode.Show -> playlistMode.showName ?: "Show"
+                }, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
             }
         }) },
         floatingActionButton = {

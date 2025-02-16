@@ -9,7 +9,7 @@ import de.timklge.karoospintunes.KarooSpintunesExtension.Companion.TAG
 import de.timklge.karoospintunes.auth.HttpException
 import de.timklge.karoospintunes.auth.OAuth2Client
 import de.timklge.karoospintunes.datatypes.PlayerDataType
-import de.timklge.karoospintunes.screens.SpotifySettings
+import de.timklge.karoospintunes.screens.SpintuneSettings
 import de.timklge.karoospintunes.spotify.APIClientProvider
 import de.timklge.karoospintunes.spotify.LocalClient
 import de.timklge.karoospintunes.spotify.PlayerStateProvider
@@ -60,18 +60,18 @@ class KarooSystemServiceProvider(private val context: Context) {
 
     val settingsKey = stringPreferencesKey("settings")
 
-    fun readSettings(settingsJson: String?): SpotifySettings {
+    fun readSettings(settingsJson: String?): SpintuneSettings {
         return if (settingsJson != null){
-            jsonWithUnknownKeys.decodeFromString<SpotifySettings>(settingsJson)
+            jsonWithUnknownKeys.decodeFromString<SpintuneSettings>(settingsJson)
         } else {
-            val defaultSettings = jsonWithUnknownKeys.decodeFromString<SpotifySettings>(
-                SpotifySettings.defaultSettings)
+            val defaultSettings = jsonWithUnknownKeys.decodeFromString<SpintuneSettings>(
+                SpintuneSettings.defaultSettings)
 
             defaultSettings.copy()
         }
     }
 
-    suspend fun saveSettings(function: (settings: SpotifySettings) -> SpotifySettings) {
+    suspend fun saveSettings(function: (settings: SpintuneSettings) -> SpintuneSettings) {
         context.dataStore.edit { t ->
             val settings = readSettings(t[settingsKey])
             val newSettings = function(settings)
@@ -79,13 +79,13 @@ class KarooSystemServiceProvider(private val context: Context) {
         }
     }
 
-    fun streamSettings(): Flow<SpotifySettings> {
+    fun streamSettings(): Flow<SpintuneSettings> {
         return context.dataStore.data.map { settingsJson ->
             try {
                 readSettings(settingsJson[settingsKey])
             } catch(e: Throwable){
                 Log.e(TAG, "Failed to read preferences", e)
-                jsonWithUnknownKeys.decodeFromString<SpotifySettings>(SpotifySettings.defaultSettings)
+                jsonWithUnknownKeys.decodeFromString<SpintuneSettings>(SpintuneSettings.defaultSettings)
             }
         }.distinctUntilChanged()
     }

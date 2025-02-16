@@ -50,7 +50,6 @@ import de.timklge.karoospintunes.AutoVolumeConfig
 import de.timklge.karoospintunes.KarooSystemServiceProvider
 import de.timklge.karoospintunes.auth.OAuth2Client
 import de.timklge.karoospintunes.auth.TokenResponse
-import de.timklge.karoospintunes.jsonWithUnknownKeys
 import de.timklge.karoospintunes.spotify.LocalClient
 import de.timklge.karoospintunes.spotify.LocalClientConnectionState
 import io.hammerhead.karooext.models.HardwareType
@@ -59,23 +58,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import org.koin.compose.koinInject
 import kotlin.math.roundToInt
-
-    @Serializable
-    data class SpotifySettings(
-        val welcomeDialogAccepted: Boolean = false,
-        val token: TokenResponse? = null,
-        val downloadThumbnailsViaCompanion: Boolean = true,
-        val useLocalSpotifyIfAvailable: Boolean = false,
-        val autoVolumeConfig: AutoVolumeConfig = AutoVolumeConfig()
-    ){
-        companion object {
-            val defaultSettings = jsonWithUnknownKeys.encodeToString(SpotifySettings())
-        }
-    }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
