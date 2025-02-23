@@ -48,6 +48,7 @@ import io.hammerhead.karooext.internal.Emitter
 import io.hammerhead.karooext.internal.ViewEmitter
 import io.hammerhead.karooext.models.DataPoint
 import io.hammerhead.karooext.models.DataType
+import io.hammerhead.karooext.models.ShowCustomStreamState
 import io.hammerhead.karooext.models.StreamState
 import io.hammerhead.karooext.models.UpdateGraphicConfig
 import io.hammerhead.karooext.models.ViewConfig
@@ -141,16 +142,6 @@ fun OptionsRows(context: Context, playerState: PlayerState, showToggle: Boolean,
 class PlayerDataType(
     val playerViewProvider: PlayerViewProvider
 ) : DataTypeImpl("karoo-spintunes", "player") {
-    // FIXME: Remove. Currently, the data field will permanently show "no sensor" if no data stream is provided
-    override fun startStream(emitter: Emitter<StreamState>) {
-        val job = CoroutineScope(Dispatchers.IO).launch {
-            emitter.onNext(StreamState.Streaming(DataPoint(dataTypeId, mapOf(DataType.Field.SINGLE to 0.0))))
-        }
-        emitter.setCancellable {
-            job.cancel()
-        }
-    }
-
     override fun startView(context: Context, config: ViewConfig, emitter: ViewEmitter) {
         Log.d(KarooSpintunesExtension.TAG, "Starting player view with $emitter - $config")
 
@@ -170,6 +161,7 @@ class PlayerDataType(
         }
 
         val viewJob = CoroutineScope(Dispatchers.IO).launch {
+            emitter.onNext(ShowCustomStreamState("", null))
             playerViewProvider.provideView(playerSize).collect { views ->
                 emitter.updateView(views)
             }
