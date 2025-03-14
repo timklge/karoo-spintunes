@@ -31,7 +31,7 @@ import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import kotlin.time.TimeSource
 
-class KarooSpintunesExtension : KarooExtension("karoo-spintunes", "1.0-beta3") {
+class KarooSpintunesExtension : KarooExtension("karoo-spintunes", BuildConfig.VERSION_NAME) {
     companion object {
         const val TAG = "karoo-spintunes"
     }
