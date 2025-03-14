@@ -42,6 +42,21 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import java.util.Locale
+
+fun formatMs(ms: Int?): String {
+    return ms?.let {
+        val hours = it / 3600000
+        val minutes = (it % 3600000) / 60000
+        val seconds = (it % 60000) / 1000
+
+        if (hours > 0) {
+            String.format(Locale.US, "%d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            String.format(Locale.US, "%d:%02d", minutes, seconds)
+        }
+    } ?: "0:00"
+}
 
 class PlayerViewProvider(private val apiClientProvider: APIClientProvider,
                          private val thumbnailCache: ThumbnailCache,
@@ -205,19 +220,9 @@ class PlayerViewProvider(private val apiClientProvider: APIClientProvider,
                                     modifier = GlanceModifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.Vertical.CenterVertically
                                 ) {
-                                    val progressText = appState.playProgressInMs?.let {
-                                        val minutes = it / 60000
-                                        val seconds = (it % 60000) / 1000
+                                    val progressText = formatMs(appState.playProgressInMs)
 
-                                        String.format(null, "%d:%02d", minutes, seconds)
-                                    } ?: "0:00"
-
-                                    val lengthText = appState.currentTrackLengthInMs?.let {
-                                        val minutes = it / 60000
-                                        val seconds = (it % 60000) / 1000
-
-                                        String.format(null, "%d:%02d", minutes, seconds)
-                                    } ?: "0:00"
+                                    val lengthText = formatMs(appState.currentTrackLengthInMs)
 
                                     Text(
                                         progressText,
