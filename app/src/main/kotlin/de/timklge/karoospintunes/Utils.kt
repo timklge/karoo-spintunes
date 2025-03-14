@@ -4,24 +4,60 @@ import android.util.Log
 import io.hammerhead.karooext.KarooSystemService
 import io.hammerhead.karooext.models.HttpResponseState
 import io.hammerhead.karooext.models.OnHttpResponse
+import io.ktor.client.HttpClient
+import io.ktor.client.request.headers
+import io.ktor.client.request.request
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.readBytes
+import io.ktor.client.statement.readRawBytes
+import io.ktor.http.HttpMethod
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.timeout
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(FlowPreview::class)
-fun KarooSystemService.makeHttpRequest(method: String, url: String, queue: Boolean = false, headers: Map<String, String> = emptyMap(), body: ByteArray? = null): Flow<HttpResponseState.Complete> {
-    val flow = callbackFlow {
-        Log.d(KarooSpintunesExtension.TAG, "$method request to ${url}...")
+suspend fun KarooSystemService.makeHttpRequest(m: String, url: String, queue: Boolean = false, headers: Map<String, String> = emptyMap(), body: ByteArray? = null): HttpResponseState.Complete {
+    if (!connected){
+        val client = HttpClient()
+        try {
+            val response = client.request(url) {
+                method = HttpMethod.parse(m)
+                headers {
+                    headers.forEach { (key, value) ->
+                        append(key, value)
+                    }
+                }
+                if (body != null) {
+                    setBody(body)
+                }
+            }
+            val responseBody = response.readRawBytes()
 
+            return HttpResponseState.Complete(
+                response.status.value,
+                response.headers.entries().associate { it.key to it.value.joinToString(",") },
+                responseBody,
+                null
+            )
+        } catch (e: Exception) {
+            return HttpResponseState.Complete(500, emptyMap(), null, "Error: ${e.message}")
+        } finally {
+            client.close()
+        }
+    }
+
+    val flow = callbackFlow {
+        Log.d(KarooSpintunesExtension.TAG, "$m request to ${url}...")
 
         val listenerId = addConsumer(
             OnHttpResponse.MakeHttpRequest(
-                method = method,
+                method = m,
                 url = url,
                 waitForConnection = false,
                 headers = headers,
@@ -46,7 +82,7 @@ fun KarooSystemService.makeHttpRequest(method: String, url: String, queue: Boole
     }
 
     return if (queue){
-        flow
+        flow.first()
     } else {
         flow.timeout(60.seconds).catch { e: Throwable ->
             if (e is TimeoutCancellationException){
@@ -54,7 +90,7 @@ fun KarooSystemService.makeHttpRequest(method: String, url: String, queue: Boole
             } else {
                 throw e
             }
-        }
+        }.first()
     }
 }
 

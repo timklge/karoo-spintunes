@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import de.timklge.karoospintunes.KarooSpintunesExtension
 import de.timklge.karoospintunes.theme.AppTheme
 import io.hammerhead.karooext.KarooSystemService
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.compose.KoinContext
@@ -63,10 +64,14 @@ fun OAuthRedirectScreen(intent: Intent, finish: () -> Unit) {
             if (code != null) {
                 coroutineScope.launch {
                     val karooSystemService = KarooSystemService(ctx)
-                    karooSystemService.connect {
+
+                    var connected = false
+                    fun onConnected(){
+                        if (connected) return
+                        connected = true
                         coroutineScope.launch innerLaunch@{
                             try {
-                                oAuth2Client.exchangeCodeForToken(code, ctx).first()
+                                oAuth2Client.exchangeCodeForToken(code, ctx)
                             } catch (e: Throwable) {
                                 dialogMessage = e.message ?: "Failed to authorize with Spotify"
                                 dialogVisible = true
@@ -76,6 +81,13 @@ fun OAuthRedirectScreen(intent: Intent, finish: () -> Unit) {
 
                             finish()
                         }
+                    }
+
+                    karooSystemService.connect { onConnected() }
+
+                    launch {
+                        delay(5_000)
+                        onConnected()
                     }
                 }
             } else {

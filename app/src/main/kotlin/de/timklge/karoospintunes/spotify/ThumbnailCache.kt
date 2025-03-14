@@ -88,7 +88,7 @@ class ThumbnailCache(
                         val downloadEnabled = wifiStatus || enableThumbnailDownloadsWhenNotOnWifi
 
                         if (downloadEnabled) {
-                            val response = karooSystemServiceProvider.karooSystemService.makeHttpRequest("GET", url, false).singleOrNull()
+                            val response = karooSystemServiceProvider.karooSystemService.makeHttpRequest("GET", url, false)
 
                             val bytes = response?.body ?: error("Failed to get thumbnail data: ${response?.statusCode}")
                             val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
