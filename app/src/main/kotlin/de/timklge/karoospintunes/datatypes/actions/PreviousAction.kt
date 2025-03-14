@@ -8,6 +8,7 @@ import androidx.glance.appwidget.action.ActionCallback
 import de.timklge.karoospintunes.KarooSpintunesExtension
 import de.timklge.karoospintunes.spotify.APIClientProvider
 import de.timklge.karoospintunes.spotify.LocalClient
+import de.timklge.karoospintunes.spotify.PlayerAction
 import de.timklge.karoospintunes.spotify.PlayerStateProvider
 import de.timklge.karoospintunes.spotify.WebAPIClient
 import kotlinx.coroutines.flow.first
@@ -29,6 +30,7 @@ class PreviousAction : ActionCallback, KoinComponent {
         Log.d(KarooSpintunesExtension.TAG, "Previous action called")
 
         val state = playerStateProvider.state.first()
+        val skipToPreviousDisabled = state.disabledActions.contains(PlayerAction.SKIP_PREVIOUS)
         val currentPlayProgress = state.playProgressInMs ?: 0
         val currentTrackLength = state.currentTrackLengthInMs
 
@@ -43,7 +45,7 @@ class PreviousAction : ActionCallback, KoinComponent {
             }
 
             is WebAPIClient -> {
-                if (!isAtStartOfTrack && !isAtEndOfTrack){
+                if ((!isAtStartOfTrack && !isAtEndOfTrack) || skipToPreviousDisabled) {
                     apiClient.seek(0)
 
                     playerStateProvider.update { appState ->

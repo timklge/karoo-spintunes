@@ -98,7 +98,7 @@ fun OptionsRows(context: Context, playerState: PlayerState, showToggle: Boolean,
     Row(modifier = GlanceModifier.fillMaxWidth().height(50.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         ActionButton(R.drawable.rewind_regular_132, buttonsDisabled || disabledActions[PlayerAction.SEEK] == true) { actionRunCallback(RewindAction::class.java) }
         ActionButton(R.drawable.fast_forward_regular_132, buttonsDisabled || disabledActions[PlayerAction.SEEK] == true) { actionRunCallback(FastForwardAction::class.java) }
-        ActionButton(R.drawable.skip_previous_regular_132, buttonsDisabled || disabledActions[PlayerAction.SKIP_PREVIOUS] == true) { actionRunCallback(PreviousAction::class.java) }
+        ActionButton(R.drawable.skip_previous_regular_132, buttonsDisabled || (disabledActions[PlayerAction.SKIP_PREVIOUS] == true && disabledActions[PlayerAction.SEEK] == true) ) { actionRunCallback(PreviousAction::class.java) }
         ActionButton(R.drawable.skip_next_regular_132, buttonsDisabled || disabledActions[PlayerAction.SKIP_NEXT] == true) { actionRunCallback(NextAction::class.java) }
 
         if (showToggle){
@@ -138,7 +138,6 @@ fun OptionsRows(context: Context, playerState: PlayerState, showToggle: Boolean,
     }
 }
 
-@OptIn(ExperimentalGlanceRemoteViewsApi::class)
 class PlayerDataType(
     val playerViewProvider: PlayerViewProvider
 ) : DataTypeImpl("karoo-spintunes", "player") {
