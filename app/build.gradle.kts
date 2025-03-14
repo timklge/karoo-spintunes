@@ -17,8 +17,8 @@ android {
         minSdk = 26
         //noinspection ExpiredTargetSdkVersion
         targetSdk = 31
-        versionCode = 3
-        versionName = "1.0-beta3"
+        versionCode = 100 + (System.getenv("BUILD_NUMBER")?.toInt() ?: 1)
+        versionName = System.getenv("RELEASE_VERSION") ?: "1.0"
 
         val env: MutableMap<String, String> = System.getenv()
         val clientId = env["SPOTIFY_CLIENT_ID"] ?: project.findProperty("SPOTIFY_CLIENT_ID").toString()
@@ -61,6 +61,34 @@ android {
         compose = true
         buildConfig = true
     }
+}
+
+tasks.register("generateManifest") {
+    description = "Generates manifest.json with current version information"
+    group = "build"
+
+    doLast {
+        val manifestFile = file("$projectDir/manifest.json")
+        val manifest = mapOf(
+            "label" to "karoo-spintunes",
+            "packageName" to "de.timklge.karoospintunes",
+            "iconUrl" to "https://github.com/timklge/karoo-spintunes/releases/latest/download/karoo-spintunes.png",
+            "latestApkUrl" to "https://github.com/timklge/karoo-spintunes/releases/latest/download/app-release.apk",
+            "latestVersion" to android.defaultConfig.versionName,
+            "latestVersionCode" to android.defaultConfig.versionCode,
+            "developer" to "timklge",
+            "description" to "Provides media controls for Spotify via Spotify Connect or via the Spotify app if sideloaded",
+            "releaseNotes" to "* Fix skip button\n* Improve progress bar contrast"
+        )
+
+        val gson = groovy.json.JsonBuilder(manifest).toPrettyString()
+        manifestFile.writeText(gson)
+        println("Generated manifest.json with version ${android.defaultConfig.versionName} (${android.defaultConfig.versionCode})")
+    }
+}
+
+tasks.named("assemble") {
+    dependsOn("generateManifest")
 }
 
 dependencies {
