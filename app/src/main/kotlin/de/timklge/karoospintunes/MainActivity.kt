@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             AppTheme {
                 KoinContext {
-                    MainScreen()
+                    MainScreen(::finish)
                 }
             }
         }
