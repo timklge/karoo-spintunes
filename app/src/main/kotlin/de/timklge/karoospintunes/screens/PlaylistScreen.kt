@@ -54,6 +54,7 @@ import androidx.paging.PagingConfig
 import androidx.paging.compose.collectAsLazyPagingItems
 import de.timklge.karoospintunes.KarooSpintunesExtension
 import de.timklge.karoospintunes.R
+import de.timklge.karoospintunes.datatypes.formatMs
 import de.timklge.karoospintunes.spotify.APIClientProvider
 import de.timklge.karoospintunes.spotify.LocalClient
 import de.timklge.karoospintunes.spotify.PlayerStateProvider
@@ -447,10 +448,7 @@ fun PlaylistScreen(
                                         Text(subLabel  ?: "Unknown", fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
 
                                         val lengthText = item?.getDefinedTrack()?.durationMs?.let { duration ->
-                                            val minutes = duration / 60000
-                                            val seconds = (duration % 60000) / 1000
-
-                                            String.format(null, "%d:%02d", minutes, seconds)
+                                            formatMs(duration)
                                         }
 
                                         if (!selectionMode){
