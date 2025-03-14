@@ -241,11 +241,11 @@ class PlayerViewProvider(private val apiClientProvider: APIClientProvider,
                                             .padding(horizontal = 5.dp, vertical = 2.dp)
                                             .height(20.dp),
                                         color = ColorProvider(
-                                            Color(context.getColor(R.color.colorPrimary)),
-                                            Color(context.getColor(R.color.colorPrimary))
+                                            Color(context.getColor(R.color.black)),
+                                            Color(context.getColor(R.color.white))
                                         ),
                                         backgroundColor = ColorProvider(
-                                            Color(context.getColor(R.color.lightGray)),
+                                            Color(context.getColor(R.color.lighterGray)),
                                             Color(context.getColor(R.color.darkGray))
                                         )
                                     )
