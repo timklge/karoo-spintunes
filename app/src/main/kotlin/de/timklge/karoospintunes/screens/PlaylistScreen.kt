@@ -467,6 +467,18 @@ fun PlaylistScreen(
                             }
                         }
                     }
+
+                    Image(
+                        painter = painterResource(id = R.drawable.back),
+                        contentDescription = "Back",
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(bottom = 10.dp)
+                            .size(54.dp)
+                            .clickable {
+                                navController?.popBackStack() ?: finish()
+                            }
+                    )
                 }
         }
     })
