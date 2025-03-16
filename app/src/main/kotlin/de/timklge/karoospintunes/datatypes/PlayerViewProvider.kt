@@ -99,7 +99,7 @@ class PlayerViewProvider(private val apiClientProvider: APIClientProvider,
                     if (playerSize.isLarge() || (!appState.isInOptionsMenu && (playerSize == PlayerSize.MEDIUM || playerSize == PlayerSize.SMALL))) {
                         glance.compose(context, DpSize.Unspecified) {
                             Column(
-                                modifier = GlanceModifier.fillMaxSize().padding(2.dp),
+                                modifier = GlanceModifier.fillMaxWidth().height(400.dp).padding(2.dp),
                                 horizontalAlignment = Alignment.Horizontal.CenterHorizontally
                             ) {
                                 if (playerSize == PlayerSize.MEDIUM || playerSize == PlayerSize.FULL_PAGE) {

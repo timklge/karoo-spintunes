@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -350,12 +351,10 @@ fun MainScreen(onFinish: () -> Unit) {
                             Text("Logout")
                         }
                     }
-
-                    Spacer(modifier = Modifier.padding(30.dp))
                 }
 
                 if (!karooConnected){
-                    Text(modifier = Modifier.padding(5.dp), text = "Could not read device status. Is your Karoo updated?")
+                    Text(modifier = Modifier.padding(5.dp), text = "Could not read device status. This app is supposed to be run on a Karoo bike computer.")
                 }
 
                 if (connectionState != LocalClientConnectionState.NotInstalled && localSpotifyIsInstalled && settingsInitialized){
@@ -375,6 +374,8 @@ fun MainScreen(onFinish: () -> Unit) {
                         else -> {}
                     }
                 }
+
+                Spacer(modifier = Modifier.padding(30.dp))
          }
 
         Image(
@@ -421,20 +422,20 @@ fun MainScreen(onFinish: () -> Unit) {
         }
 
         Dialog(onDismissRequest = { playerPreviewDialogVisible = false }, properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true, usePlatformDefaultWidth = false)) {
-            Box(modifier = Modifier.padding(1.dp).width(480.dp).height(800.dp)) {
+            Box(modifier = Modifier.padding(1.dp).height(400.dp).fillMaxWidth()) {
                 Column(modifier = Modifier.align(Alignment.Center)) {
                     val view: RemoteViews? by viewProvider.provideView(PlayerSize.FULL_PAGE).collectAsStateWithLifecycle(initialValue = null)
 
                     AndroidView(
                         factory = { context ->
                             FrameLayout(context).apply {
+                                layoutParams = FrameLayout.LayoutParams(
+                                    480, // width
+                                    400  // height
+                                )
+
                                 val addedView = view?.apply(context, this)
                                 addedView?.let { v ->
-                                    val layoutParams = FrameLayout.LayoutParams(
-                                        480,  // width
-                                        800  // height in pixels
-                                    )
-                                    v.layoutParams = layoutParams
                                     addView(v)
                                 }
                             }
@@ -445,6 +446,7 @@ fun MainScreen(onFinish: () -> Unit) {
                             newView?.let { v -> frameLayout.addView(v) }
                         },
                         modifier = Modifier
+                            .size(480.dp, 800.dp) // Force the AndroidView to this exact size
                             .background(if (isSystemInDarkTheme()) Color.Black else Color.White)
                     )
                 }
