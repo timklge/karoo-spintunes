@@ -68,7 +68,9 @@ import de.timklge.karoospintunes.spotify.model.PlayRequestUris
 import de.timklge.karoospintunes.spotify.model.PlaylistItemsResponse
 import de.timklge.karoospintunes.spotify.model.TrackObject
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -80,7 +82,9 @@ sealed class PlaylistScreenMode {
     data object Queue : PlaylistScreenMode()
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
+    DelicateCoroutinesApi::class
+)
 @Composable
 fun PlaylistScreen(
     navController: NavHostController?,
@@ -153,7 +157,7 @@ fun PlaylistScreen(
         floatingActionButton = {
             if (playlistMode is PlaylistScreenMode.Playlist){
                 Button(modifier = Modifier.defaultMinSize(minWidth = 56.dp, minHeight = 56.dp), shape = CircleShape, enabled = !playStarted, onClick = {
-                    CoroutineScope(Dispatchers.Main).launch {
+                    GlobalScope.launch {
                         try {
                             playStarted = true
 
@@ -193,7 +197,7 @@ fun PlaylistScreen(
                             .clickable {
                                 if (playStarted) return@clickable
 
-                                CoroutineScope(Dispatchers.Main).launch {
+                                GlobalScope.launch {
                                     try {
                                         playStarted = true
 
@@ -233,7 +237,7 @@ fun PlaylistScreen(
                         .clickable {
                             if (playStarted) return@clickable
 
-                            CoroutineScope(Dispatchers.Main).launch {
+                            GlobalScope.launch {
                                 try {
                                     playStarted = true
                                     val selectedUri = selected.mapNotNull { it.getDefinedTrack()?.uri }
@@ -254,7 +258,7 @@ fun PlaylistScreen(
                             .size(50.dp)
                             .padding(horizontal = 10.dp)
                             .clickable {
-                                CoroutineScope(Dispatchers.Main).launch {
+                                GlobalScope.launch {
                                     try {
                                         playStarted = true
 
@@ -404,7 +408,7 @@ fun PlaylistScreen(
                                     if (selectionMode) {
                                         toggleSelect()
                                     } else {
-                                        coroutineContext.launch {
+                                        GlobalScope.launch {
                                             startPlayback(item)
                                         }
                                     }
