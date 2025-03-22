@@ -20,6 +20,7 @@ import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
@@ -99,7 +100,7 @@ class PlayerViewProvider(private val apiClientProvider: APIClientProvider,
                     if (playerSize.isLarge() || (!appState.isInOptionsMenu && (playerSize == PlayerSize.MEDIUM || playerSize == PlayerSize.SMALL))) {
                         glance.compose(context, DpSize.Unspecified) {
                             Column(
-                                modifier = GlanceModifier.fillMaxWidth().height(360.dp).padding(2.dp),
+                                modifier = GlanceModifier.fillMaxWidth().fillMaxHeight().padding(2.dp),
                                 horizontalAlignment = Alignment.Horizontal.CenterHorizontally
                             ) {
                                 if (playerSize == PlayerSize.MEDIUM || playerSize == PlayerSize.FULL_PAGE) {
@@ -169,9 +170,7 @@ class PlayerViewProvider(private val apiClientProvider: APIClientProvider,
                                         appState.isPlayingArtistName ?: appState.isPlayingShowName
 
                                     Column(
-                                        modifier = if (playerSize == PlayerSize.FULL_PAGE) GlanceModifier.width(
-                                            200.dp
-                                        ) else GlanceModifier.width(150.dp)
+                                        modifier = GlanceModifier.defaultWeight()
                                     ) {
                                         Text(
                                             appState.isPlayingTrackName ?: "Unknown",
@@ -191,8 +190,6 @@ class PlayerViewProvider(private val apiClientProvider: APIClientProvider,
                                             maxLines = 1
                                         )
                                     }
-
-                                    Spacer(modifier = GlanceModifier.defaultWeight())
 
                                     Row(
                                         verticalAlignment = Alignment.Vertical.CenterVertically,
