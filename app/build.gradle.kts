@@ -94,6 +94,7 @@ tasks.named("assemble") {
 dependencies {
     implementation(files("libs/spotify-app-remote-release-0.8.0.aar"))
 
+    implementation(libs.ktor.client.okhttp)
     implementation(libs.hammerhead.karoo.ext)
     implementation(libs.androidx.core.ktx)
     implementation(libs.bundles.androidx.lifeycle)

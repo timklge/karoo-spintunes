@@ -92,7 +92,7 @@ fun NavScreen(karooSystemService: KarooSystemService, finish: () -> Unit, navCon
         }
 
         composable(route = "library"){
-            PlayScreen(navController, karooSystemService)
+            PlayScreen(navController, karooSystemService) { finish() }
         }
 
         composable(route = "saved-songs") {

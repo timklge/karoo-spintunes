@@ -1,11 +1,13 @@
 package de.timklge.karoospintunes.screens
 
+import android.util.Log
 import android.widget.FrameLayout
 import android.widget.RemoteViews
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -28,6 +31,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -47,18 +51,22 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.timklge.karoospintunes.AutoVolume
 import de.timklge.karoospintunes.AutoVolumeConfig
+import de.timklge.karoospintunes.KarooSpintunesExtension
+import de.timklge.karoospintunes.KarooSpintunesServices
 import de.timklge.karoospintunes.KarooSystemServiceProvider
 import de.timklge.karoospintunes.R
 import de.timklge.karoospintunes.auth.OAuth2Client
@@ -74,7 +82,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.koin.android.ext.android.get
 import org.koin.compose.koinInject
+import org.koin.java.KoinJavaComponent.inject
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -341,12 +351,10 @@ fun MainScreen(onFinish: () -> Unit) {
                             Text("Logout")
                         }
                     }
-
-                    Spacer(modifier = Modifier.padding(30.dp))
                 }
 
                 if (!karooConnected){
-                    Text(modifier = Modifier.padding(5.dp), text = "Could not read device status. Is your Karoo updated?")
+                    Text(modifier = Modifier.padding(5.dp), text = "Could not read device status. This app is supposed to be run on a Karoo bike computer.")
                 }
 
                 if (connectionState != LocalClientConnectionState.NotInstalled && localSpotifyIsInstalled && settingsInitialized){
@@ -366,6 +374,8 @@ fun MainScreen(onFinish: () -> Unit) {
                         else -> {}
                     }
                 }
+
+                Spacer(modifier = Modifier.padding(30.dp))
          }
 
         Image(
@@ -401,16 +411,33 @@ fun MainScreen(onFinish: () -> Unit) {
     }
 
     if (playerPreviewDialogVisible){
-        Dialog(onDismissRequest = { playerPreviewDialogVisible = false }){
-            Surface(modifier = Modifier.padding(1.dp)) {
-                Column {
+        val services = koinInject<KarooSpintunesServices>()
+
+        LaunchedEffect(Unit) {
+            delay(500)
+            if (!karooConnected){
+                Log.i(KarooSpintunesExtension.TAG, "Player preview dialog opened (no Karoo)")
+                services.startJobs()
+            }
+        }
+
+        Dialog(onDismissRequest = { playerPreviewDialogVisible = false }, properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true, usePlatformDefaultWidth = false)) {
+            Box(modifier = Modifier.padding(1.dp).height(400.dp).fillMaxWidth()) {
+                Column(modifier = Modifier.align(Alignment.Center)) {
                     val view: RemoteViews? by viewProvider.provideView(PlayerSize.FULL_PAGE).collectAsStateWithLifecycle(initialValue = null)
 
                     AndroidView(
                         factory = { context ->
                             FrameLayout(context).apply {
+                                layoutParams = FrameLayout.LayoutParams(
+                                    480, // width
+                                    400  // height
+                                )
+
                                 val addedView = view?.apply(context, this)
-                                addedView?.let { v -> addView(v) }
+                                addedView?.let { v ->
+                                    addView(v)
+                                }
                             }
                         },
                         update = { frameLayout ->
@@ -418,7 +445,9 @@ fun MainScreen(onFinish: () -> Unit) {
                             val newView = view?.apply(frameLayout.context, frameLayout)
                             newView?.let { v -> frameLayout.addView(v) }
                         },
-                        modifier = Modifier.fillMaxWidth().fillMaxHeight()
+                        modifier = Modifier
+                            .size(480.dp, 800.dp) // Force the AndroidView to this exact size
+                            .background(if (isSystemInDarkTheme()) Color.Black else Color.White)
                     )
                 }
             }

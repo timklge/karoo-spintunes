@@ -150,6 +150,7 @@ val appModule = module {
     singleOf(::LocalClient)
     singleOf(::PlayerStateProvider)
     singleOf(::PlayerViewProvider)
+    singleOf(::KarooSpintunesServices)
 }
 
 class KarooSpintunesApplication : Application() {

@@ -124,7 +124,7 @@ class OAuth2Client(private val karooSystemServiceProvider: KarooSystemServicePro
         }
     }
 
-    fun exchangeCodeForToken(code: String, ctx: Context): Flow<TokenResponse>    {
+    suspend fun exchangeCodeForToken(code: String, ctx: Context): TokenResponse {
         // Build form data
         val formData = buildString {
             append("grant_type=authorization_code")
@@ -137,11 +137,11 @@ class OAuth2Client(private val karooSystemServiceProvider: KarooSystemServicePro
         // Convert to bytes and write
         val postData = formData.encodeToByteArray()
 
-        val responseFlow = karooSystemServiceProvider.karooSystemService.makeHttpRequest("POST", tokenEndpoint, headers = mapOf(
+        val response = karooSystemServiceProvider.karooSystemService.makeHttpRequest("POST", tokenEndpoint, headers = mapOf(
             "Content-Type" to "application/x-www-form-urlencoded"
         ), body = postData)
 
-        return responseFlow.map { response -> updateAccessToken(response) }
+        return updateAccessToken(response)
     }
 
     private fun refreshAccessToken(): Flow<TokenResponse> = flow {
@@ -159,7 +159,7 @@ class OAuth2Client(private val karooSystemServiceProvider: KarooSystemServicePro
         val response = karooSystemServiceProvider.karooSystemService.makeHttpRequest("POST", tokenEndpoint, headers = mapOf(
             "Content-Type" to "application/x-www-form-urlencoded",
             "User-Agent" to "KarooSpotify"
-        ), body = postData).first()
+        ), body = postData)
 
         val newAccessToken = updateAccessToken(response)
 
@@ -177,7 +177,7 @@ class OAuth2Client(private val karooSystemServiceProvider: KarooSystemServicePro
             headersWithAuth["User-Agent"] = "KarooSpotify"
             headersWithAuth["Accept-Encoding"] = "gzip"
 
-            var response = karooSystemServiceProvider.karooSystemService.makeHttpRequest(method, url, queue, headersWithAuth, body).single()
+            var response = karooSystemServiceProvider.karooSystemService.makeHttpRequest(method, url, queue, headersWithAuth, body)
 
             if (response.statusCode == 401) {
                 val newToken = refreshAccessToken().first()
@@ -186,7 +186,7 @@ class OAuth2Client(private val karooSystemServiceProvider: KarooSystemServicePro
                 newHeaders["Authorization"] = "Bearer ${newToken.accessToken}"
                 newHeaders["User-Agent"] = "KarooSpotify"
 
-                response = karooSystemServiceProvider.karooSystemService.makeHttpRequest(method, url, queue, newHeaders, body).first()
+                response = karooSystemServiceProvider.karooSystemService.makeHttpRequest(method, url, queue, newHeaders, body)
 
                 val responseBody = response.body
                 if (responseBody != null && responseBody.isNotEmpty()) response = decompressResponse(response)
