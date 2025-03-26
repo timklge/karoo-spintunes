@@ -14,14 +14,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.absolutePadding
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -31,13 +29,11 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -82,9 +78,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.koin.android.ext.android.get
 import org.koin.compose.koinInject
-import org.koin.java.KoinJavaComponent.inject
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -242,7 +236,12 @@ fun MainScreen(onFinish: () -> Unit) {
                 if (token != null){
                     if (connectionState != LocalClientConnectionState.NotInstalled && localSpotifyIsInstalled && settingsInitialized){
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Switch(checked = enableLocalSpotify, onCheckedChange = { enableLocalSpotify = it})
+                            Switch(checked = enableLocalSpotify, onCheckedChange = {
+                                enableLocalSpotify = it
+                                runBlocking {
+                                    updateSettings()
+                                }
+                            })
                             Spacer(modifier = Modifier.width(10.dp))
 
                             Text("Control Spotify app installed on Karoo")
@@ -360,16 +359,16 @@ fun MainScreen(onFinish: () -> Unit) {
                 if (connectionState != LocalClientConnectionState.NotInstalled && localSpotifyIsInstalled && settingsInitialized){
                     when (connectionState){
                         is LocalClientConnectionState.Connecting -> {
-                            Text("Trying to connect to local Spotify client...")
+                            Text(modifier = Modifier.padding(5.dp), text = "Trying to connect to local Spotify client...")
                         }
                         is LocalClientConnectionState.Connected -> {
-                            Text("Connected to local Spotify client.")
+                            Text(modifier = Modifier.padding(5.dp), text = "Connected to local Spotify client.")
                         }
                         is LocalClientConnectionState.Failed -> {
-                            Text("Local Spotify connection failed: ${(connectionState as LocalClientConnectionState.Failed).message}")
+                            Text(modifier = Modifier.padding(5.dp), text = "Local Spotify connection failed: ${(connectionState as LocalClientConnectionState.Failed).message}")
                         }
                         is LocalClientConnectionState.NotInstalled -> {
-                            Text("Local Spotify app is not installed.")
+                            Text(modifier = Modifier.padding(5.dp), text = "Local Spotify app is not installed.")
                         }
                         else -> {}
                     }
