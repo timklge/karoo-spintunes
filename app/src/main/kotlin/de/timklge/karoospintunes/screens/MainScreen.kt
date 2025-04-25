@@ -356,6 +356,8 @@ fun MainScreen(onFinish: () -> Unit) {
                     Text(modifier = Modifier.padding(5.dp), text = "Could not read device status. This app is supposed to be run on a Karoo bike computer.")
                 }
 
+                Log.d(KarooSpintunesExtension.TAG, "Connection state: $connectionState, localSpotifyIsInstalled: $localSpotifyIsInstalled, settingsInitialized: $settingsInitialized")
+
                 if (connectionState != LocalClientConnectionState.NotInstalled && localSpotifyIsInstalled && settingsInitialized){
                     when (connectionState){
                         is LocalClientConnectionState.Connecting -> {
@@ -370,7 +372,9 @@ fun MainScreen(onFinish: () -> Unit) {
                         is LocalClientConnectionState.NotInstalled -> {
                             Text(modifier = Modifier.padding(5.dp), text = "Local Spotify app is not installed.")
                         }
-                        else -> {}
+                        is LocalClientConnectionState.Idle -> {
+                            Text(modifier = Modifier.padding(5.dp), text = "Local Spotify client is idle.")
+                        }
                     }
                 }
 
