@@ -157,7 +157,7 @@ fun MainScreen(onFinish: () -> Unit) {
 
     DisposableEffect(Unit) {
         val lifecycleObserver = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
+            if (event == Lifecycle.Event.ON_RESUME || event == Lifecycle.Event.ON_START) {
                 coroutineScope.launch {
                     localSpotifyIsInstalled = localClient.isInstalled()
                 }
@@ -204,7 +204,8 @@ fun MainScreen(onFinish: () -> Unit) {
             Column(modifier = Modifier
                 .padding(10.dp)
                 .verticalScroll(rememberScrollState())
-                .fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                .fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp))
+            {
 
                 if(settingsInitialized) {
                     if (token == null) {
@@ -325,30 +326,29 @@ fun MainScreen(onFinish: () -> Unit) {
                     }
                 }
 
-                    if (token != null && settingsInitialized) {
-                        FilledTonalButton(modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp), onClick = {
-                            playerPreviewDialogVisible = true
-                        }) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = "Preview")
-                            Spacer(modifier = Modifier.width(5.dp))
-                            Text("Preview Player")
-                        }
+                if (token != null && settingsInitialized) {
+                    FilledTonalButton(modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp), onClick = {
+                        playerPreviewDialogVisible = true
+                    }) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = "Preview")
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text("Preview Player")
+                    }
 
-                        FilledTonalButton(modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp), onClick = {
-                            coroutineScope.launch {
-                                karooSystemServiceProvider.saveSettings { settings ->
-                                    settings.copy(token = null)
-                                }
+                    FilledTonalButton(modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp), onClick = {
+                        coroutineScope.launch {
+                            karooSystemServiceProvider.saveSettings { settings ->
+                                settings.copy(token = null)
                             }
-                        }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Logout")
-                            Spacer(modifier = Modifier.width(5.dp))
-                            Text("Logout")
                         }
+                    }) {
+                        Icon(Icons.Default.Clear, contentDescription = "Logout")
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text("Logout")
                     }
                 }
 
@@ -358,7 +358,7 @@ fun MainScreen(onFinish: () -> Unit) {
 
                 Log.d(KarooSpintunesExtension.TAG, "Connection state: $connectionState, localSpotifyIsInstalled: $localSpotifyIsInstalled, settingsInitialized: $settingsInitialized")
 
-                if (connectionState != LocalClientConnectionState.NotInstalled && localSpotifyIsInstalled && settingsInitialized){
+                if (localSpotifyIsInstalled && settingsInitialized){
                     when (connectionState){
                         is LocalClientConnectionState.Connecting -> {
                             Text(modifier = Modifier.padding(5.dp), text = "Trying to connect to local Spotify client...")
@@ -379,6 +379,7 @@ fun MainScreen(onFinish: () -> Unit) {
                 }
 
                 Spacer(modifier = Modifier.padding(30.dp))
+            }
          }
 
         Image(
