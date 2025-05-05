@@ -166,8 +166,7 @@ class PlayerViewProvider(private val apiClientProvider: APIClientProvider,
                                         }
                                     }
 
-                                    val artistName =
-                                        appState.isPlayingArtistName ?: appState.isPlayingShowName
+                                    val artistName = if (appState.isPlayingArtistName.isNullOrBlank()) appState.isPlayingShowName else appState.isPlayingArtistName
 
                                     Column(
                                         modifier = GlanceModifier.defaultWeight()
