@@ -7,6 +7,7 @@ data class PlayerState(
     val isPlayingShowName: String? = null,
     val isShuffling: Boolean? = null,
     val isPlaying: Boolean? = null,
+    val isLocalPlayer: Boolean = false,
     val isRepeating: RepeatState? = null,
     val isInitialized: Boolean = false,
     val isInOptionsMenu: Boolean = false,
