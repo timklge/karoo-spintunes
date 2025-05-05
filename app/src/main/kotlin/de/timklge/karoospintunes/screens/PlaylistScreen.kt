@@ -71,6 +71,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -123,7 +124,7 @@ fun PlaylistScreen(
                     uris = listOf(item?.getDefinedTrack()?.uri ?: "")
                 )
 
-                webApiClient.playUris(playRequest)
+                apiClientProvider.getActiveAPIInstance().first().playUris(playRequest)
             }
 
             playerStateProvider.update { playerState ->
