@@ -111,6 +111,7 @@ class KarooSpintunesServices(private val webAPIClient: WebAPIClient,
                         playProgressInMs = playerState.playbackPosition.toInt(),
                         isPlaying = playerState.track?.name?.let { !playerState.isPaused },
                         commandPending = false,
+                        isLocalPlayer = true,
                         disabledActions = disabled,
                         volume = localClient.getVolume()
                     )
@@ -150,7 +151,7 @@ class KarooSpintunesServices(private val webAPIClient: WebAPIClient,
             flow {
                 while (true) {
                     emit(Unit)
-                    delay(40 * 1_000)
+                    delay(45 * 1_000)
                 }
             }
         }

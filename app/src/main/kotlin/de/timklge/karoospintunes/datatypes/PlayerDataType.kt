@@ -15,7 +15,6 @@ import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.action.Action
 import androidx.glance.action.clickable
-import androidx.glance.appwidget.ExperimentalGlanceRemoteViewsApi
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.color.ColorProvider
@@ -44,12 +43,8 @@ import de.timklge.karoospintunes.spotify.PlayerAction
 import de.timklge.karoospintunes.spotify.PlayerState
 import de.timklge.karoospintunes.spotify.RepeatState
 import io.hammerhead.karooext.extension.DataTypeImpl
-import io.hammerhead.karooext.internal.Emitter
 import io.hammerhead.karooext.internal.ViewEmitter
-import io.hammerhead.karooext.models.DataPoint
-import io.hammerhead.karooext.models.DataType
 import io.hammerhead.karooext.models.ShowCustomStreamState
-import io.hammerhead.karooext.models.StreamState
 import io.hammerhead.karooext.models.UpdateGraphicConfig
 import io.hammerhead.karooext.models.ViewConfig
 import kotlinx.coroutines.CoroutineScope
@@ -94,7 +89,13 @@ fun PlayButton(playerState: PlayerState, playerSize: PlayerSize, disabled: Boole
 }
 
 @Composable
-fun OptionsRows(context: Context, playerState: PlayerState, showToggle: Boolean, buttonsDisabled: Boolean, disabledActions: Map<PlayerAction, Boolean>) {
+fun OptionsRows(
+    context: Context,
+    playerState: PlayerState,
+    showToggle: Boolean,
+    buttonsDisabled: Boolean,
+    disabledActions: Map<PlayerAction, Boolean>
+) {
     Row(modifier = GlanceModifier.fillMaxWidth().height(50.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         ActionButton(R.drawable.rewind_regular_132, buttonsDisabled || disabledActions[PlayerAction.SEEK] == true) { actionRunCallback(RewindAction::class.java) }
         ActionButton(R.drawable.fast_forward_regular_132, buttonsDisabled || disabledActions[PlayerAction.SEEK] == true) { actionRunCallback(FastForwardAction::class.java) }
@@ -126,7 +127,8 @@ fun OptionsRows(context: Context, playerState: PlayerState, showToggle: Boolean,
             val intent = Intent(context, QueueActivity::class.java)
             actionStartActivity(intent)
         }
-        ActionButton(R.drawable.library_regular_132, buttonsDisabled) {
+        // The library button should remain enabled in local mode even when 'buttonsDisabled' is true.
+        ActionButton(R.drawable.library_regular_132, buttonsDisabled && !playerState.isLocalPlayer) {
             val intent = Intent(context, PlayActivity::class.java)
             actionStartActivity(intent)
         }
