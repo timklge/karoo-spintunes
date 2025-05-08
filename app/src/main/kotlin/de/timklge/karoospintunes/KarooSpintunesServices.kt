@@ -195,6 +195,7 @@ class KarooSpintunesServices(private val webAPIClient: WebAPIClient,
                         playProgressInMs = playerState?.progressMs,
                         isPlaying = playerState?.isPlaying,
                         commandPending = false,
+                        isLocalPlayer = false,
                         disabledActions = disabledActions,
                         volume = playerState?.device?.volumePercent?.toFloat()?.div(100f)?.coerceIn(0f, 1f)
                     )
