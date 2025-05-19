@@ -31,9 +31,14 @@ abstract class VolumeControlAction: ActionCallback, KoinComponent {
         val start = TimeSource.Monotonic.markNow()
         val playerState = playerStateProvider.state.first()
 
-        Log.d(KarooSpintunesExtension.TAG, "Volume control action called with step ${getVolumeStep()}")
-
         val apiClient = apiClientProvider.getActiveAPIInstance().first()
+        val stepFactor = if (apiClient is WebAPIClient) {
+            1f
+        } else {
+            0.5f
+        }
+
+        Log.d(KarooSpintunesExtension.TAG, "Volume control action called with step ${getVolumeStep() * stepFactor}")
 
         val oldVolume = when (apiClient) {
             is WebAPIClient -> {
@@ -48,7 +53,7 @@ abstract class VolumeControlAction: ActionCallback, KoinComponent {
                 error("Unknown API client")
             }
         }
-        val volume = (oldVolume + getVolumeStep()).coerceIn(0f, 1f)
+        val volume = (oldVolume + getVolumeStep() * stepFactor).coerceIn(0f, 1f)
 
         apiClient.setVolume(volume)
 
