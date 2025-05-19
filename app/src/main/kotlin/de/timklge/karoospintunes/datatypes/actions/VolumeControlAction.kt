@@ -17,6 +17,9 @@ import kotlin.time.TimeSource
 
 const val VOLUME_CONTROL_STEP = 0.2f
 
+const val WEB_API_STEP_FACTOR = 1f
+const val LOCAL_API_STEP_FACTOR = 0.5f
+
 abstract class VolumeControlAction: ActionCallback, KoinComponent {
     private val apiClientProvider: APIClientProvider by inject()
     private val playerStateProvider: PlayerStateProvider by inject()
@@ -31,9 +34,14 @@ abstract class VolumeControlAction: ActionCallback, KoinComponent {
         val start = TimeSource.Monotonic.markNow()
         val playerState = playerStateProvider.state.first()
 
-        Log.d(KarooSpintunesExtension.TAG, "Volume control action called with step ${getVolumeStep()}")
-
         val apiClient = apiClientProvider.getActiveAPIInstance().first()
+        val stepFactor = if (apiClient is WebAPIClient) {
+            WEB_API_STEP_FACTOR
+        } else {
+            LOCAL_API_STEP_FACTOR
+        }
+
+        Log.d(KarooSpintunesExtension.TAG, "Volume control action called with step ${getVolumeStep() * stepFactor}")
 
         val oldVolume = when (apiClient) {
             is WebAPIClient -> {
@@ -48,7 +56,7 @@ abstract class VolumeControlAction: ActionCallback, KoinComponent {
                 error("Unknown API client")
             }
         }
-        val volume = (oldVolume + getVolumeStep()).coerceIn(0f, 1f)
+        val volume = (oldVolume + getVolumeStep() * stepFactor).coerceIn(0f, 1f)
 
         apiClient.setVolume(volume)
 
