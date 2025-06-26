@@ -11,7 +11,7 @@ data class SpintuneSettings(
     val welcomeDialogAccepted: Boolean = false,
     val token: TokenResponse? = null,
     val downloadThumbnailsViaCompanion: Boolean = true,
-    val useLocalSpotifyIfAvailable: Boolean = false,
+    val useLocalSpotifyIfAvailable: Boolean = true,
     val autoVolumeConfig: AutoVolumeConfig = AutoVolumeConfig()
 ){
     companion object {
