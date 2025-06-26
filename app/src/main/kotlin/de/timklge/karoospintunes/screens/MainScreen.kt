@@ -99,6 +99,7 @@ fun MainScreen(onFinish: () -> Unit) {
     var token by remember { mutableStateOf<TokenResponse?>(null) }
     var settingsInitialized by remember { mutableStateOf(false) }
     var downloadThumbnails by remember { mutableStateOf(false) }
+    var highResThumbnails by remember { mutableStateOf(false) }
     val connectionState by localClient.connectionState.collectAsStateWithLifecycle(initialValue = LocalClientConnectionState.Idle)
     var enableLocalSpotify by remember { mutableStateOf(false) }
     var localSpotifyIsInstalled by remember { mutableStateOf(false) }
@@ -128,6 +129,7 @@ fun MainScreen(onFinish: () -> Unit) {
             settings.copy(welcomeDialogAccepted = true,
                 downloadThumbnailsViaCompanion = downloadThumbnails,
                 useLocalSpotifyIfAvailable = enableLocalSpotify,
+                highResThumbnails = highResThumbnails,
                 autoVolumeConfig = AutoVolumeConfig(
                     enabled = autoVolumeEnabled,
                     minVolumeAtSpeed = minSpeedSetting,
@@ -178,6 +180,7 @@ fun MainScreen(onFinish: () -> Unit) {
             token = settings.token
             settingsInitialized = true
             downloadThumbnails = settings.downloadThumbnailsViaCompanion
+            highResThumbnails = settings.highResThumbnails
             enableLocalSpotify = settings.useLocalSpotifyIfAvailable
             autoVolumeEnabled = settings.autoVolumeConfig.enabled
             autoVolumeMinVolume = (settings.autoVolumeConfig.minVolume * 100).roundToInt().toString()
@@ -258,6 +261,13 @@ fun MainScreen(onFinish: () -> Unit) {
                         } else {
                             Text("Download thumbnails via companion app")
                         }
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Switch(checked = highResThumbnails, onCheckedChange = { highResThumbnails = it})
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        Text("Download high-resolution thumbnails")
                     }
 
                     if (enableLocalSpotify && connectionState != LocalClientConnectionState.NotInstalled && settingsInitialized){
