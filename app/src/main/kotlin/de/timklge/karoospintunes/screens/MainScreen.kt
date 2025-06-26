@@ -454,6 +454,18 @@ fun MainScreen(onFinish: () -> Unit) {
                             .background(if (isSystemInDarkTheme()) Color.Black else Color.White)
                     )
                 }
+
+                Image(
+                    painter = painterResource(id = R.drawable.back),
+                    contentDescription = "Back",
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(bottom = 10.dp)
+                        .size(54.dp)
+                        .clickable {
+                            playerPreviewDialogVisible = false
+                        }
+                )
             }
         }
     }

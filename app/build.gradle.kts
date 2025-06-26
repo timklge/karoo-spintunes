@@ -77,8 +77,14 @@ tasks.register("generateManifest") {
             "latestVersion" to android.defaultConfig.versionName,
             "latestVersionCode" to android.defaultConfig.versionCode,
             "developer" to "timklge",
-            "description" to "Provides media controls for Spotify via Spotify Connect or via the Spotify app if sideloaded",
-            "releaseNotes" to "* Fix skip button\n* Improve progress bar contrast"
+            "description" to "Provides media controls for Spotify. Can be used as a remote control for Spotify running on your phone / computer or offline if you have sideloaded the Spotify app itself on the Karoo.",
+            "releaseNotes" to "* Initial release",
+            "screenshotUrls" to listOf(
+                "https://github.com/timklge/karoo-spintunes/releases/latest/download/player.png",
+                "https://github.com/timklge/karoo-spintunes/releases/latest/download/playlists.png",
+                "https://github.com/timklge/karoo-spintunes/releases/latest/download/podcast.png",
+                "https://github.com/timklge/karoo-spintunes/releases/latest/download/login.png"
+            ),
         )
 
         val gson = groovy.json.JsonBuilder(manifest).toPrettyString()

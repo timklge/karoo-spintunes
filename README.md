@@ -1,8 +1,5 @@
 # Karoo Spintunes Extension
 
-> [!IMPORTANT]  
-> App is currently in testing and not yet available.
-
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/timklge/karoo-spintunes/android.yml)](https://github.com/timklge/karoo-spintunes/actions/workflows/android.yml)
 [![GitHub Downloads (specific asset, all releases)](https://img.shields.io/github/downloads/timklge/karoo-spintunes/app-release.apk)](https://github.com/timklge/karoo-spintunes/releases)
 [![GitHub License](https://img.shields.io/github/license/timklge/karoo-spintunes)](https://github.com/timklge/karoo-spintunes/blob/master/LICENSE)
@@ -11,9 +8,10 @@ This extension for Karoo devices adds a graphical data field with Spotify music 
 
 Compatible with Karoo 2 and Karoo 3 devices.
 
-![Player](player.jpg)
-![Playlists](playlists.jpg)
-![Podcast](podcast.jpg)
+![Player](player.png)
+![Playlists](playlists.png)
+![Podcast](podcast.png)
+![Login](login.png)
 
 ## Features
 
@@ -23,9 +21,6 @@ Compatible with Karoo 2 and Karoo 3 devices.
 - To be implemented: search, view album, view artist, podcast selection
 
 ## Installation
-
-> [!IMPORTANT]  
-> You currently can not use the app without registering your own Spotify developer account and using your own client ID and secret.
 
 There are two ways to use this app:
 

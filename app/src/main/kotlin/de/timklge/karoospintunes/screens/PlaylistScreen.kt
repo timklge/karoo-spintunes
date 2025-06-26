@@ -450,7 +450,7 @@ fun PlaylistScreen(
                                             item?.getDefinedTrack()?.artists?.joinToString(", ") { it.name ?: "" }
                                         }
 
-                                        Text(subLabel  ?: "Unknown", fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                                        Text(subLabel  ?: "Unknown", fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
 
                                         val lengthText = item?.getDefinedTrack()?.durationMs?.let { duration ->
                                             formatMs(duration)
@@ -458,7 +458,7 @@ fun PlaylistScreen(
 
                                         if (!selectionMode){
                                             if (lengthText != null){
-                                                Text(lengthText, fontSize = 15.sp, maxLines = 1, modifier = Modifier.wrapContentWidth())
+                                                Text(lengthText, fontSize = 15.sp, maxLines = 1, modifier = Modifier.wrapContentWidth(), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), overflow = TextOverflow.Clip)
                                             }
                                         }
                                     }
