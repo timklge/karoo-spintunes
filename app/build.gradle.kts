@@ -70,7 +70,7 @@ tasks.register("generateManifest") {
     doLast {
         val manifestFile = file("$projectDir/manifest.json")
         val manifest = mapOf(
-            "label" to "karoo-spintunes",
+            "label" to "Spintunes",
             "packageName" to "de.timklge.karoospintunes",
             "iconUrl" to "https://github.com/timklge/karoo-spintunes/releases/latest/download/karoo-spintunes.png",
             "latestApkUrl" to "https://github.com/timklge/karoo-spintunes/releases/latest/download/app-release.apk",
