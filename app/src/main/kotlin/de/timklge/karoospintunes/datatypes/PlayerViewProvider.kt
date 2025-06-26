@@ -18,6 +18,7 @@ import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
+import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxHeight
@@ -31,9 +32,13 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
+import de.timklge.karoospintunes.KarooSystemServiceProvider
 import de.timklge.karoospintunes.R
 import de.timklge.karoospintunes.datatypes.actions.NextAction
+import de.timklge.karoospintunes.screens.SpintuneSettings
+import de.timklge.karoospintunes.spotify.APIClient
 import de.timklge.karoospintunes.spotify.APIClientProvider
+import de.timklge.karoospintunes.spotify.PlayerState
 import de.timklge.karoospintunes.spotify.PlayerStateProvider
 import de.timklge.karoospintunes.spotify.ThumbnailCache
 import kotlinx.coroutines.CoroutineScope
@@ -61,7 +66,8 @@ fun formatMs(ms: Int?): String {
 class PlayerViewProvider(private val apiClientProvider: APIClientProvider,
                          private val thumbnailCache: ThumbnailCache,
                          private val playerStateProvider: PlayerStateProvider,
-                         private val context: Context
+                         private val context: Context,
+                         private val karooSystemServiceProvider: KarooSystemServiceProvider
 ) {
 
     @OptIn(ExperimentalGlanceRemoteViewsApi::class)
@@ -69,19 +75,26 @@ class PlayerViewProvider(private val apiClientProvider: APIClientProvider,
 
     @OptIn(ExperimentalGlanceRemoteViewsApi::class)
     fun provideView(playerSize: PlayerSize): Flow<RemoteViews> = flow {
-        playerStateProvider.state
-            .combine(apiClientProvider.getActiveAPIInstance()) { state, apiClient ->
-                state to apiClient
-            }
-            .collect { (appState, apiClient) ->
-                // Log.d(KarooSpotifyExtension.TAG, "Updating player view with $appState")
+        data class StreamData(
+            val playerState: PlayerState,
+            val apiClient: APIClient,
+            val settings: SpintuneSettings
+        )
 
-                // TODO Is it worth it to download the higher resolution thumbnails? Can take ~ 20 s via companion...
+        combine(playerStateProvider.state, apiClientProvider.getActiveAPIInstance(), karooSystemServiceProvider.streamSettings()) { state, apiClient, settings ->
+                StreamData(state, apiClient, settings)
+            }
+            .collect { (appState, _, settings) ->
                 val thumbnailUrl = when (playerSize) {
                     PlayerSize.SINGLE_FIELD, PlayerSize.SMALL -> null
                     PlayerSize.MEDIUM -> appState.isPlayingTrackThumbnailUrls?.last()
-                    PlayerSize.FULL_PAGE -> appState.isPlayingTrackThumbnailUrls?.getOrNull(1)
-                        ?: appState.isPlayingTrackThumbnailUrls?.last()
+                    PlayerSize.FULL_PAGE -> {
+                        if (settings.highResThumbnails) {
+                            appState.isPlayingTrackThumbnailUrls?.getOrNull(1) ?: appState.isPlayingTrackThumbnailUrls?.last()
+                        } else {
+                            appState.isPlayingTrackThumbnailUrls?.last()
+                        }
+                    }
                 }
 
                 val cachedThumbnail = thumbnailUrl?.let { url ->
@@ -131,8 +144,7 @@ class PlayerViewProvider(private val apiClientProvider: APIClientProvider,
                                             Image(
                                                 ImageProvider(thumbnail),
                                                 "Thumbnail",
-                                                modifier = GlanceModifier.defaultWeight()
-                                                    .padding(5.dp, 2.dp)
+                                                modifier = GlanceModifier.fillMaxWidth().defaultWeight().padding(5.dp, 2.dp)
                                             )
                                         }
                                     } else {
