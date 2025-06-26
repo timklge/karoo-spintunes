@@ -25,6 +25,7 @@ import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import de.timklge.karoospintunes.KarooSpintunesExtension
+import de.timklge.karoospintunes.KarooSystemServiceProvider
 import de.timklge.karoospintunes.R
 import de.timklge.karoospintunes.datatypes.actions.FastForwardAction
 import de.timklge.karoospintunes.datatypes.actions.LouderAction
@@ -42,6 +43,7 @@ import de.timklge.karoospintunes.screens.QueueActivity
 import de.timklge.karoospintunes.spotify.PlayerAction
 import de.timklge.karoospintunes.spotify.PlayerState
 import de.timklge.karoospintunes.spotify.RepeatState
+import de.timklge.karoospintunes.streamDatatypeIsVisible
 import io.hammerhead.karooext.extension.DataTypeImpl
 import io.hammerhead.karooext.internal.ViewEmitter
 import io.hammerhead.karooext.models.ShowCustomStreamState
@@ -50,6 +52,7 @@ import io.hammerhead.karooext.models.ViewConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @Composable fun ActionButton(
@@ -141,7 +144,8 @@ fun OptionsRows(
 }
 
 class PlayerDataType(
-    val playerViewProvider: PlayerViewProvider
+    val playerViewProvider: PlayerViewProvider,
+    val karooSystemServiceProvider: KarooSystemServiceProvider
 ) : DataTypeImpl("karoo-spintunes", "player") {
     override fun startView(context: Context, config: ViewConfig, emitter: ViewEmitter) {
         Log.d(KarooSpintunesExtension.TAG, "Starting player view with $emitter - $config")
@@ -163,8 +167,12 @@ class PlayerDataType(
 
         val viewJob = CoroutineScope(Dispatchers.IO).launch {
             emitter.onNext(ShowCustomStreamState("", null))
-            playerViewProvider.provideView(playerSize).collect { views ->
-                emitter.updateView(views)
+            karooSystemServiceProvider.karooSystemService.streamDatatypeIsVisible(dataTypeId).collectLatest { playerIsVisible ->
+                if (playerIsVisible) {
+                    playerViewProvider.provideView(playerSize).collect { views ->
+                        emitter.updateView(views)
+                    }
+                }
             }
         }
         emitter.setCancellable {
