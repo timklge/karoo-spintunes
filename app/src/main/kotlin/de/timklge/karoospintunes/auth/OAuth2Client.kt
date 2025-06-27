@@ -15,8 +15,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.net.URLEncoder
@@ -158,7 +156,7 @@ class OAuth2Client(private val karooSystemServiceProvider: KarooSystemServicePro
 
         val response = karooSystemServiceProvider.karooSystemService.makeHttpRequest("POST", tokenEndpoint, headers = mapOf(
             "Content-Type" to "application/x-www-form-urlencoded",
-            "User-Agent" to "KarooSpotify"
+            "User-Agent" to KarooSpintunesExtension.TAG
         ), body = postData)
 
         val newAccessToken = updateAccessToken(response)
@@ -174,7 +172,7 @@ class OAuth2Client(private val karooSystemServiceProvider: KarooSystemServicePro
 
             val headersWithAuth = headers.toMutableMap()
             headersWithAuth["Authorization"] = "Bearer ${token.accessToken}"
-            headersWithAuth["User-Agent"] = "KarooSpotify"
+            headersWithAuth["User-Agent"] = KarooSpintunesExtension.TAG
             headersWithAuth["Accept-Encoding"] = "gzip"
 
             var response = karooSystemServiceProvider.karooSystemService.makeHttpRequest(method, url, queue, headersWithAuth, body)
@@ -184,7 +182,7 @@ class OAuth2Client(private val karooSystemServiceProvider: KarooSystemServicePro
                 val newHeaders = headersWithAuth.toMutableMap()
 
                 newHeaders["Authorization"] = "Bearer ${newToken.accessToken}"
-                newHeaders["User-Agent"] = "KarooSpotify"
+                newHeaders["User-Agent"] = KarooSpintunesExtension.TAG
 
                 response = karooSystemServiceProvider.karooSystemService.makeHttpRequest(method, url, queue, newHeaders, body)
 
