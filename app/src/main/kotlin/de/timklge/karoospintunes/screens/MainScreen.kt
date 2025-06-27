@@ -212,7 +212,7 @@ fun MainScreen(onFinish: () -> Unit) {
 
                 if(settingsInitialized) {
                     if (token == null) {
-                        Text("Please login to Spotify to enable the app.")
+                        Text("Please log in to Spotify to enable the app.")
 
                         Spacer(modifier = Modifier.height(10.dp))
 
@@ -230,7 +230,7 @@ fun MainScreen(onFinish: () -> Unit) {
                             }) {
                             Icon(Icons.Default.Person, contentDescription = "Login")
                             Spacer(modifier = Modifier.width(5.dp))
-                            Text("Login at Spotify")
+                            Text("Log in to Spotify")
                         }
                     } else {
                         Text("You are logged in to Spotify.")
