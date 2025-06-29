@@ -216,7 +216,7 @@ fun MainScreen(onFinish: () -> Unit) {
 
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        Text("You can then proceed to add a player widget to your data pages in your profile settings.")
+                        Text("You can then proceed to add a player data field to your data pages in your profile settings.")
 
                         Spacer(modifier = Modifier.height(10.dp))
 
@@ -253,7 +253,12 @@ fun MainScreen(onFinish: () -> Unit) {
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Switch(checked = downloadThumbnails, onCheckedChange = { downloadThumbnails = it})
+                        Switch(checked = downloadThumbnails, onCheckedChange = {
+                            downloadThumbnails = it
+                            runBlocking {
+                                updateSettings()
+                            }
+                        })
                         Spacer(modifier = Modifier.width(10.dp))
 
                         if (karooSystemServiceProvider.karooSystemService.hardwareType == HardwareType.K2){
@@ -264,7 +269,12 @@ fun MainScreen(onFinish: () -> Unit) {
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Switch(checked = highResThumbnails, onCheckedChange = { highResThumbnails = it})
+                        Switch(checked = highResThumbnails, onCheckedChange = {
+                            highResThumbnails = it
+                            runBlocking {
+                                updateSettings()
+                            }
+                        })
                         Spacer(modifier = Modifier.width(10.dp))
 
                         Text("Download high-resolution thumbnails")
@@ -272,7 +282,12 @@ fun MainScreen(onFinish: () -> Unit) {
 
                     if (enableLocalSpotify && connectionState != LocalClientConnectionState.NotInstalled && settingsInitialized){
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Switch(checked = autoVolumeEnabled, onCheckedChange = { autoVolumeEnabled = it})
+                            Switch(checked = autoVolumeEnabled, onCheckedChange = {
+                                autoVolumeEnabled = it
+                                runBlocking {
+                                    updateSettings()
+                                }
+                            })
                             Spacer(modifier = Modifier.width(10.dp))
 
                             Text("Auto set volume based on speed")
