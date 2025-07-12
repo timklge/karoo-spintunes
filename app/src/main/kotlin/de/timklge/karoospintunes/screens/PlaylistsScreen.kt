@@ -44,6 +44,7 @@ import de.timklge.karoospintunes.R
 import de.timklge.karoospintunes.spotify.ThumbnailCache
 import de.timklge.karoospintunes.spotify.WebAPIClient
 import de.timklge.karoospintunes.spotify.model.PlaylistsItem
+import de.timklge.karoospintunes.spotify.model.PlaylistsResponse
 import de.timklge.karoospintunes.spotify.model.ShowsResponse
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -108,11 +109,14 @@ fun PlaylistsScreen(navController: NavHostController, mode: PlaylistsScreenMode)
         isRefreshing = isRefreshing,
         onRefresh = {
             coroutineContext.launch {
-                val identifier = when(mode){
-                    PlaylistsScreenMode.Playlists -> "playlists"
-                    PlaylistsScreenMode.Shows -> "shows"
+                when(mode){
+                    PlaylistsScreenMode.Playlists -> {
+                        webAPIClient.clearCache<PlaylistsResponse>("playlists", ctx)
+                    }
+                    PlaylistsScreenMode.Shows -> {
+                        webAPIClient.clearCache<ShowsResponse>("shows", ctx)
+                    }
                 }
-                webAPIClient.clearCache<ShowsResponse>(identifier, ctx)
                 lazyPagingItems.refresh()
             }
         }
