@@ -167,10 +167,16 @@ class PlayerDataType(
 
         val viewJob = CoroutineScope(Dispatchers.IO).launch {
             emitter.onNext(ShowCustomStreamState("", null))
-            karooSystemServiceProvider.karooSystemService.streamDatatypeIsVisible(dataTypeId).collectLatest { playerIsVisible ->
-                if (playerIsVisible) {
-                    playerViewProvider.provideView(playerSize).collect { views ->
-                        emitter.updateView(views)
+            if (config.preview) {
+                playerViewProvider.provideView(playerSize).collect { views ->
+                    emitter.updateView(views)
+                }
+            } else {
+                karooSystemServiceProvider.karooSystemService.streamDatatypeIsVisible(dataTypeId).collectLatest { playerIsVisible ->
+                    if (playerIsVisible) {
+                        playerViewProvider.provideView(playerSize).collect { views ->
+                            emitter.updateView(views)
+                        }
                     }
                 }
             }
