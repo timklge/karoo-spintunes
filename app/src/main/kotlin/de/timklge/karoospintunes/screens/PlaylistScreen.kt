@@ -40,6 +40,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
@@ -101,6 +102,8 @@ fun PlaylistScreen(
     val thumbnailCache = koinInject<ThumbnailCache>()
     val apiClientProvider = koinInject<APIClientProvider>()
     val playerStateProvider = koinInject<PlayerStateProvider>()
+
+    val playerState by playerStateProvider.state.collectAsStateWithLifecycle(initialValue = null)
 
     // TODO Should queue be disabled in local mode? No, it should be enabled and still use the web API as its unsupported with the android SDK
     val apiClient by apiClientProvider.getActiveAPIInstance().collectAsStateWithLifecycle(initialValue = null)
@@ -191,12 +194,14 @@ fun PlaylistScreen(
         bottomBar = {
             if (selectionMode){
                 BottomAppBar {
+                    val isCommandPending = playerState?.commandPending == true || playStarted
+
                     if (apiClient is WebAPIClient || selected.size == 1){
                         Icon(modifier = Modifier
                             .size(50.dp)
                             .padding(horizontal = 10.dp)
                             .clickable {
-                                if (playStarted) return@clickable
+                                if (playStarted || isCommandPending) return@clickable
 
                                 GlobalScope.launch {
                                     try {
@@ -229,14 +234,17 @@ fun PlaylistScreen(
                                         playStarted = false
                                     }
                                 }
-                            }, painter = painterResource(id = R.drawable.play_regular_132), contentDescription = "Play")
+                            }
+                            .alpha(if (isCommandPending) 0.5f else 1.0f),
+                            painter = painterResource(id = R.drawable.play_regular_132),
+                            contentDescription = "Play")
                     }
 
                     Icon(modifier = Modifier
                         .size(50.dp)
                         .padding(horizontal = 10.dp)
                         .clickable {
-                            if (playStarted) return@clickable
+                            if (playStarted || isCommandPending) return@clickable
 
                             GlobalScope.launch {
                                 try {
@@ -252,13 +260,18 @@ fun PlaylistScreen(
                                     playStarted = false
                                 }
                             }
-                        }, painter = painterResource(id = R.drawable.add_to_queue_regular_132), contentDescription = "Add to queue")
+                        }
+                        .alpha(if (isCommandPending) 0.5f else 1.0f),
+                        painter = painterResource(id = R.drawable.add_to_queue_regular_132),
+                        contentDescription = "Add to queue")
 
                     BottomAppBar {
                         Icon(modifier = Modifier
                             .size(50.dp)
                             .padding(horizontal = 10.dp)
                             .clickable {
+                                if (isCommandPending) return@clickable
+
                                 GlobalScope.launch {
                                     try {
                                         playStarted = true
@@ -293,7 +306,10 @@ fun PlaylistScreen(
                                         playStarted = false
                                     }
                                 }
-                            }, painter = painterResource(id = R.drawable.like_regular_132), contentDescription = "Add to library")
+                            }
+                            .alpha(if (isCommandPending) 0.5f else 1.0f),
+                            painter = painterResource(id = R.drawable.like_regular_132),
+                            contentDescription = "Add to library")
                     }
                 }
             }
