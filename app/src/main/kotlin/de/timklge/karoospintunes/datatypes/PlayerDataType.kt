@@ -41,6 +41,7 @@ import de.timklge.karoospintunes.datatypes.actions.ToggleShuffleAction
 import de.timklge.karoospintunes.screens.PlayActivity
 import de.timklge.karoospintunes.screens.QueueActivity
 import de.timklge.karoospintunes.spotify.PlayerAction
+import de.timklge.karoospintunes.spotify.PlayerInPreviewModeProvider
 import de.timklge.karoospintunes.spotify.PlayerState
 import de.timklge.karoospintunes.spotify.RepeatState
 import de.timklge.karoospintunes.streamDatatypeIsVisible
@@ -54,6 +55,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 @Composable fun ActionButton(
     @DrawableRes icon: Int,
@@ -145,14 +147,34 @@ fun OptionsRows(
 
 class PlayerDataType(
     val playerViewProvider: PlayerViewProvider,
-    val karooSystemServiceProvider: KarooSystemServiceProvider
+    val karooSystemServiceProvider: KarooSystemServiceProvider,
+    val playerInPreviewModeProvider: PlayerInPreviewModeProvider
 ) : DataTypeImpl("karoo-spintunes", "player") {
+    companion object {
+        const val DATA_TYPE_ID = "TYPE_EXT::karoo-spintunes::player"
+    }
+
     override fun startView(context: Context, config: ViewConfig, emitter: ViewEmitter) {
         Log.d(KarooSpintunesExtension.TAG, "Starting player view with $emitter - $config")
 
         val configJob = CoroutineScope(Dispatchers.IO).launch {
             emitter.onNext(UpdateGraphicConfig(showHeader = false))
-            awaitCancellation()
+
+            if (config.preview){
+                playerInPreviewModeProvider.update {
+                    it.copy(inPreviewMode = it.inPreviewMode + 1)
+                }
+            }
+
+            try {
+                awaitCancellation()
+            } finally {
+                if (config.preview) {
+                    playerInPreviewModeProvider.update { state ->
+                        state.copy(inPreviewMode = state.inPreviewMode - 1)
+                    }
+                }
+            }
         }
 
         val playerSize = if (config.gridSize.first <= 30){
@@ -183,6 +205,7 @@ class PlayerDataType(
         }
         emitter.setCancellable {
             Log.d(KarooSpintunesExtension.TAG, "Stopping player view with $emitter")
+
             configJob.cancel()
             viewJob.cancel()
         }

@@ -13,6 +13,7 @@ import de.timklge.karoospintunes.datatypes.PlayerViewProvider
 import de.timklge.karoospintunes.screens.SpintuneSettings
 import de.timklge.karoospintunes.spotify.APIClientProvider
 import de.timklge.karoospintunes.spotify.LocalClient
+import de.timklge.karoospintunes.spotify.PlayerInPreviewModeProvider
 import de.timklge.karoospintunes.spotify.PlayerStateProvider
 import de.timklge.karoospintunes.spotify.ThumbnailCache
 import de.timklge.karoospintunes.spotify.WebAPIClient
@@ -149,6 +150,7 @@ val appModule = module {
     singleOf(::AutoVolume)
     singleOf(::LocalClient)
     singleOf(::PlayerStateProvider)
+    singleOf(::PlayerInPreviewModeProvider)
     singleOf(::PlayerViewProvider)
     singleOf(::KarooSpintunesServices)
 }

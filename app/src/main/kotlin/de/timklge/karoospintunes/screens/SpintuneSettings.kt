@@ -13,6 +13,7 @@ data class SpintuneSettings(
     val downloadThumbnailsViaCompanion: Boolean = true,
     val highResThumbnails: Boolean = false,
     val useLocalSpotifyIfAvailable: Boolean = true,
+    val onlyRefreshOnActivePage: Boolean = true,
     val autoVolumeConfig: AutoVolumeConfig = AutoVolumeConfig()
 ){
     companion object {
