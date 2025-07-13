@@ -71,6 +71,7 @@ import de.timklge.karoospintunes.datatypes.PlayerSize
 import de.timklge.karoospintunes.datatypes.PlayerViewProvider
 import de.timklge.karoospintunes.spotify.LocalClient
 import de.timklge.karoospintunes.spotify.LocalClientConnectionState
+import de.timklge.karoospintunes.spotify.PlayerInPreviewModeProvider
 import io.hammerhead.karooext.models.HardwareType
 import io.hammerhead.karooext.models.UserProfile
 import kotlinx.coroutines.delay
@@ -89,6 +90,7 @@ fun MainScreen(onFinish: () -> Unit) {
     val karooSystemServiceProvider = koinInject<KarooSystemServiceProvider>()
     val oauth2Client = koinInject<OAuth2Client>()
     val viewProvider = koinInject<PlayerViewProvider>()
+    val playerInPreviewModeProvider = koinInject<PlayerInPreviewModeProvider>()
 
     val ctx = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -104,6 +106,7 @@ fun MainScreen(onFinish: () -> Unit) {
     var enableLocalSpotify by remember { mutableStateOf(false) }
     var localSpotifyIsInstalled by remember { mutableStateOf(false) }
     var playerPreviewDialogVisible by remember { mutableStateOf(false) }
+    var onlyRefreshOnActivePage by remember { mutableStateOf(true) }
 
     var isImperial by remember { mutableStateOf(false) }
 
@@ -130,6 +133,7 @@ fun MainScreen(onFinish: () -> Unit) {
                 downloadThumbnailsViaCompanion = downloadThumbnails,
                 useLocalSpotifyIfAvailable = enableLocalSpotify,
                 highResThumbnails = highResThumbnails,
+                onlyRefreshOnActivePage = onlyRefreshOnActivePage,
                 autoVolumeConfig = AutoVolumeConfig(
                     enabled = autoVolumeEnabled,
                     minVolumeAtSpeed = minSpeedSetting,
@@ -182,6 +186,7 @@ fun MainScreen(onFinish: () -> Unit) {
             downloadThumbnails = settings.downloadThumbnailsViaCompanion
             highResThumbnails = settings.highResThumbnails
             enableLocalSpotify = settings.useLocalSpotifyIfAvailable
+            onlyRefreshOnActivePage = settings.onlyRefreshOnActivePage
             autoVolumeEnabled = settings.autoVolumeConfig.enabled
             autoVolumeMinVolume = (settings.autoVolumeConfig.minVolume * 100).roundToInt().toString()
             autoVolumeMaxVolume = (settings.autoVolumeConfig.maxVolume * 100).roundToInt().toString()
@@ -280,6 +285,21 @@ fun MainScreen(onFinish: () -> Unit) {
                         Text("Download high-resolution thumbnails")
                     }
 
+                    // Only show onlyRefreshOnActivePage toggle when local Spotify is not connected
+                    if (!(enableLocalSpotify && connectionState != LocalClientConnectionState.NotInstalled && settingsInitialized)){
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Switch(checked = onlyRefreshOnActivePage == true, onCheckedChange = {
+                                onlyRefreshOnActivePage = it
+                                runBlocking {
+                                    updateSettings()
+                                }
+                            })
+                            Spacer(modifier = Modifier.width(10.dp))
+
+                            Text("Only refresh player when on active page")
+                        }
+                    }
+
                     if (enableLocalSpotify && connectionState != LocalClientConnectionState.NotInstalled && settingsInitialized){
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Switch(checked = autoVolumeEnabled, onCheckedChange = {
@@ -356,6 +376,10 @@ fun MainScreen(onFinish: () -> Unit) {
                         .fillMaxWidth()
                         .height(50.dp), onClick = {
                         playerPreviewDialogVisible = true
+
+                        playerInPreviewModeProvider.update {
+                            it.copy(inPreviewMode = it.inPreviewMode + 1)
+                        }
                     }) {
                         Icon(Icons.Default.PlayArrow, contentDescription = "Preview")
                         Spacer(modifier = Modifier.width(5.dp))
@@ -450,7 +474,12 @@ fun MainScreen(onFinish: () -> Unit) {
             }
         }
 
-        Dialog(onDismissRequest = { playerPreviewDialogVisible = false }, properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true, usePlatformDefaultWidth = false)) {
+        Dialog(onDismissRequest = {
+            playerPreviewDialogVisible = false
+            playerInPreviewModeProvider.update {
+                it.copy(inPreviewMode = it.inPreviewMode - 1)
+            }
+        }, properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true, usePlatformDefaultWidth = false)) {
             Box(modifier = Modifier.padding(1.dp).height(400.dp).fillMaxWidth()) {
                 Column(modifier = Modifier.align(Alignment.Center)) {
                     val view: RemoteViews? by viewProvider.provideView(PlayerSize.FULL_PAGE).collectAsStateWithLifecycle(initialValue = null)
@@ -489,6 +518,9 @@ fun MainScreen(onFinish: () -> Unit) {
                         .size(54.dp)
                         .clickable {
                             playerPreviewDialogVisible = false
+                            playerInPreviewModeProvider.update {
+                                it.copy(inPreviewMode = it.inPreviewMode - 1)
+                            }
                         }
                 )
             }

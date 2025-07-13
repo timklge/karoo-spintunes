@@ -4,31 +4,40 @@ import android.content.Context
 import android.util.Log
 import de.timklge.karoospintunes.KarooSpintunesExtension.Companion.TAG
 import de.timklge.karoospintunes.datatypes.PlayerDataType
+import de.timklge.karoospintunes.screens.SpintuneSettings
 import de.timklge.karoospintunes.spotify.APIClientProvider
 import de.timklge.karoospintunes.spotify.LocalClient
 import de.timklge.karoospintunes.spotify.PlaybackType
 import de.timklge.karoospintunes.spotify.PlayerAction
+import de.timklge.karoospintunes.spotify.PlayerInPreviewModeProvider
 import de.timklge.karoospintunes.spotify.PlayerStateProvider
 import de.timklge.karoospintunes.spotify.RepeatState
 import de.timklge.karoospintunes.spotify.ThumbnailCache
 import de.timklge.karoospintunes.spotify.WebAPIClient
+import io.hammerhead.karooext.models.ActiveRideProfile
+import io.hammerhead.karooext.models.RideProfile
+import io.hammerhead.karooext.models.RideState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import org.koin.android.ext.android.inject
+import kotlinx.coroutines.supervisorScope
 import kotlin.time.TimeSource
 
 class KarooSpintunesServices(private val webAPIClient: WebAPIClient,
@@ -37,45 +46,40 @@ class KarooSpintunesServices(private val webAPIClient: WebAPIClient,
                              private val autoVolume: AutoVolume,
                              private val localClient: LocalClient,
                              private val playerStateProvider: PlayerStateProvider,
+                             private val playerInPreviewModeProvider: PlayerInPreviewModeProvider,
                              private val context: Context,
                              private val karooSystem: KarooSystemServiceProvider) {
 
-    private val jobs = mutableSetOf<Job>()
+    private val scope = CoroutineScope(Dispatchers.IO)
 
     fun startJobs(){
-        jobs.forEach { it.cancel() }
-        jobs.clear()
-
-        jobs.addAll(setOf(
-            startPlayerRefreshJob(),
-            startPlayerAdvanceJob(),
-            startThumbnailCleanupJob(),
-            startLocalSpotifyJob(),
-            startAutoVolumeJob()
-        ))
-    }
-
-    fun cancelJobs(){
-        jobs.forEach { it.cancel() }
-        jobs.clear()
-    }
-
-    private fun startAutoVolumeJob(): Job {
-        return CoroutineScope(Dispatchers.IO).launch {
-            autoVolume.setAutoVolume()
+        scope.launch {
+            supervisorScope {
+                launch { startPlayerRefreshJob() }
+                launch { startPlayerAdvanceJob() }
+                launch { startThumbnailCleanupJob() }
+                launch { startLocalSpotifyJob() }
+                launch { startAutoVolumeJob() }
+            }
         }
     }
 
-    private fun startPlayerRefreshJob(): Job {
-        return CoroutineScope(Dispatchers.IO).launch {
-            apiClientProvider.streamLocalSpotifyIsEnabled().collectLatest {
-                Log.d(TAG, "Local Spotify enabled: $it")
+    fun cancelJobs(){
+        scope.cancel()
+    }
 
-                if (it) {
-                    refreshLocalPlayer()
-                } else {
-                    refreshWebPlayer()
-                }
+    private suspend fun startAutoVolumeJob() {
+        autoVolume.setAutoVolume()
+    }
+
+    private suspend fun startPlayerRefreshJob() {
+        apiClientProvider.streamLocalSpotifyIsEnabled().collectLatest {
+            Log.d(TAG, "Local Spotify enabled: $it")
+
+            if (it) {
+                refreshLocalPlayer()
+            } else {
+                refreshWebPlayer()
             }
         }
     }
@@ -147,7 +151,7 @@ class KarooSpintunesServices(private val webAPIClient: WebAPIClient,
             emitAll(playerExhaustedStream())
         }
 
-        val refreshFlow = tickerFlow.flatMapLatest {
+        val refreshRequestedFlow = tickerFlow.flatMapLatest {
             flow {
                 while (true) {
                     emit(Unit)
@@ -155,6 +159,44 @@ class KarooSpintunesServices(private val webAPIClient: WebAPIClient,
                 }
             }
         }
+
+        data class StreamData(
+            val isVisible: Boolean,
+            val rideState: RideState,
+            val rideProfile: ActiveRideProfile?,
+            val settings: SpintuneSettings,
+            val playerInPreviewMode: Int
+        )
+
+        val refreshRequestedFlowActiveOrPreview = combine(karooSystem.karooSystemService.streamDatatypeIsVisible(PlayerDataType.DATA_TYPE_ID),
+            karooSystem.streamRideState(),
+            karooSystem.karooSystemService.streamActiveRideProfile(),
+            karooSystem.streamSettings(),
+            playerInPreviewModeProvider.state
+        ) { isVisible, rideState, rideProfile, settings, playerInPreviewMode ->
+            StreamData(isVisible, rideState, rideProfile, settings, playerInPreviewMode.inPreviewMode)
+        }.map { streamData ->
+            if (streamData.settings.onlyRefreshOnActivePage == true) {
+                Log.d(TAG, "Player visibility update: isVisible=${streamData.isVisible}, playerInPreviewMode=${streamData.playerInPreviewMode}, rideState=${streamData.rideState}")
+
+                streamData.playerInPreviewMode > 0 || (streamData.isVisible && (streamData.rideState is RideState.Recording || streamData.rideState is RideState.Paused))
+            } else {
+                val datatypesOnCurrentProfile = streamData.rideProfile?.profile?.pages
+                    ?.flatMap { it.elements }
+                    ?.map { it.dataTypeId }
+                    ?.toSet() ?: emptySet()
+
+                val isOnCurrentProfile = (streamData.rideState is RideState.Recording || streamData.rideState is RideState.Paused) && datatypesOnCurrentProfile.contains(PlayerDataType.DATA_TYPE_ID)
+
+                Log.d(TAG, "Player visibility update: playerInPreviewMode=${streamData.playerInPreviewMode}, isOnCurrentProfile=$isOnCurrentProfile, rideState=${streamData.rideState}")
+
+                streamData.playerInPreviewMode > 0 || isOnCurrentProfile
+            }
+        }.distinctUntilChanged()
+
+        val refreshFlow = combine(refreshRequestedFlow, refreshRequestedFlowActiveOrPreview) { _, activeOrPreview ->
+            activeOrPreview
+        }.filter { it }.throttle(10_000L)
 
         refreshFlow.collect {
             try {
@@ -206,7 +248,7 @@ class KarooSpintunesServices(private val webAPIClient: WebAPIClient,
         }
     }
 
-    private fun startPlayerAdvanceJob(): Job = CoroutineScope(Dispatchers.IO).launch {
+    private suspend fun startPlayerAdvanceJob() {
         while(true) {
             try {
                 playerStateProvider.update { player ->
@@ -223,14 +265,14 @@ class KarooSpintunesServices(private val webAPIClient: WebAPIClient,
                 delay(5_000)
             } catch(e: CancellationException){
                 Log.w(TAG, "Player advance job was cancelled")
-                break
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to update player progress", e)
             }
         }
     }
 
-    private fun startThumbnailCleanupJob(): Job = CoroutineScope(Dispatchers.IO).launch {
+    private suspend fun startThumbnailCleanupJob() {
         while(true){
             try {
                 thumbnailCache.clearCache()
@@ -242,7 +284,7 @@ class KarooSpintunesServices(private val webAPIClient: WebAPIClient,
         }
     }
 
-    private fun startLocalSpotifyJob(): Job = CoroutineScope(Dispatchers.IO).launch {
+    private suspend fun startLocalSpotifyJob() {
         karooSystem.streamSettings()
             .distinctUntilChangedBy { it.useLocalSpotifyIfAvailable }
             .collectLatest { settings ->
