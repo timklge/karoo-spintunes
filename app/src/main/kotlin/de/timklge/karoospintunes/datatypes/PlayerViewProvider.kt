@@ -1,6 +1,7 @@
 package de.timklge.karoospintunes.datatypes
 
 import android.content.Context
+import android.content.Intent
 import android.widget.RemoteViews
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
@@ -15,6 +16,7 @@ import androidx.glance.appwidget.ExperimentalGlanceRemoteViewsApi
 import androidx.glance.appwidget.GlanceRemoteViews
 import androidx.glance.appwidget.LinearProgressIndicator
 import androidx.glance.appwidget.action.actionRunCallback
+import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
@@ -35,6 +37,8 @@ import androidx.glance.text.TextStyle
 import de.timklge.karoospintunes.KarooSystemServiceProvider
 import de.timklge.karoospintunes.R
 import de.timklge.karoospintunes.datatypes.actions.NextAction
+import de.timklge.karoospintunes.datatypes.actions.ToggleOptionsMenuCallback
+import de.timklge.karoospintunes.screens.PlayActivity
 import de.timklge.karoospintunes.screens.SpintuneSettings
 import de.timklge.karoospintunes.spotify.APIClient
 import de.timklge.karoospintunes.spotify.APIClientProvider
@@ -205,7 +209,16 @@ class PlayerViewProvider(private val apiClientProvider: APIClientProvider,
                                         verticalAlignment = Alignment.Vertical.CenterVertically,
                                         modifier = GlanceModifier.height(50.dp)
                                     ) {
-                                        PlayButton(appState, playerSize, buttonsDisabled)
+                                        if (appState.isPlaying != null && playerSize == PlayerSize.SMALL){
+                                            ActionButton(R.drawable.dots_vertical_rounded_regular_132, buttonsDisabled) { actionRunCallback(
+                                                ToggleOptionsMenuCallback::class.java)}
+                                        }
+
+                                        // The library button should remain enabled in local mode even when 'buttonsDisabled' is true.
+                                        ActionButton(R.drawable.library_regular_132, buttonsDisabled && !appState.isLocalPlayer) {
+                                            val intent = Intent(context, PlayActivity::class.java)
+                                            actionStartActivity(intent)
+                                        }
                                     }
                                 }
 
@@ -217,7 +230,8 @@ class PlayerViewProvider(private val apiClientProvider: APIClientProvider,
                                         playerState = appState,
                                         showToggle = false,
                                         buttonsDisabled = buttonsDisabled,
-                                        disabledActions = appState.disabledActions
+                                        disabledActions = appState.disabledActions,
+                                        playerSize = playerSize
                                     )
 
                                     Spacer(modifier = GlanceModifier.height(2.dp))
@@ -290,7 +304,8 @@ class PlayerViewProvider(private val apiClientProvider: APIClientProvider,
                                     playerState = appState,
                                     showToggle = true,
                                     buttonsDisabled = buttonsDisabled,
-                                    disabledActions = appState.disabledActions
+                                    disabledActions = appState.disabledActions,
+                                    playerSize = playerSize
                                 )
                             }
                         }

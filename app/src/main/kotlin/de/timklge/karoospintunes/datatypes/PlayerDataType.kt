@@ -87,10 +87,6 @@ fun PlayButton(playerState: PlayerState, playerSize: PlayerSize, disabled: Boole
     } else if(playerState.isPlaying == false) {
         ActionButton(R.drawable.play_regular_132, disabled) { actionRunCallback(PlayAction::class.java) }
     }
-
-    if (playerState.isPlaying != null && playerSize == PlayerSize.SMALL){
-        ActionButton(R.drawable.dots_vertical_rounded_regular_132, disabled) { actionRunCallback(ToggleOptionsMenuCallback::class.java)}
-    }
 }
 
 @Composable
@@ -99,21 +95,18 @@ fun OptionsRows(
     playerState: PlayerState,
     showToggle: Boolean,
     buttonsDisabled: Boolean,
-    disabledActions: Map<PlayerAction, Boolean>
+    disabledActions: Map<PlayerAction, Boolean>,
+    playerSize: PlayerSize
 ) {
     Row(modifier = GlanceModifier.fillMaxWidth().height(50.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        ActionButton(R.drawable.rewind_regular_132, buttonsDisabled || disabledActions[PlayerAction.SEEK] == true) { actionRunCallback(RewindAction::class.java) }
-        ActionButton(R.drawable.fast_forward_regular_132, buttonsDisabled || disabledActions[PlayerAction.SEEK] == true) { actionRunCallback(FastForwardAction::class.java) }
         ActionButton(R.drawable.skip_previous_regular_132, buttonsDisabled || (disabledActions[PlayerAction.SKIP_PREVIOUS] == true && disabledActions[PlayerAction.SEEK] == true) ) { actionRunCallback(PreviousAction::class.java) }
+        ActionButton(R.drawable.rewind_regular_132, buttonsDisabled || disabledActions[PlayerAction.SEEK] == true) { actionRunCallback(RewindAction::class.java) }
+        PlayButton(playerState, playerSize, buttonsDisabled)
+        ActionButton(R.drawable.fast_forward_regular_132, buttonsDisabled || disabledActions[PlayerAction.SEEK] == true) { actionRunCallback(FastForwardAction::class.java) }
         ActionButton(R.drawable.skip_next_regular_132, buttonsDisabled || disabledActions[PlayerAction.SKIP_NEXT] == true) { actionRunCallback(NextAction::class.java) }
 
         if (showToggle){
             ActionButton(R.drawable.dots_vertical_rounded_regular_132, buttonsDisabled) { actionRunCallback(ToggleOptionsMenuCallback::class.java)}
-        }
-
-        if (disabledActions[PlayerAction.SET_VOLUME] != true){
-            val canMakeLouder = playerState.volume?.let { v -> v < 1.0f } ?: false
-            ActionButton(R.drawable.volume_full_regular_132, buttonsDisabled, !canMakeLouder) { actionRunCallback(LouderAction::class.java)}
         }
     }
 
@@ -132,15 +125,15 @@ fun OptionsRows(
             val intent = Intent(context, QueueActivity::class.java)
             actionStartActivity(intent)
         }
-        // The library button should remain enabled in local mode even when 'buttonsDisabled' is true.
-        ActionButton(R.drawable.library_regular_132, buttonsDisabled && !playerState.isLocalPlayer) {
-            val intent = Intent(context, PlayActivity::class.java)
-            actionStartActivity(intent)
-        }
 
         if (disabledActions[PlayerAction.SET_VOLUME] != true){
             val canMakeQuieter = playerState.volume?.let { v -> v > 0.0f } ?: false
             ActionButton(R.drawable.volume_low_regular_132, buttonsDisabled, !canMakeQuieter) { actionRunCallback(QuieterAction::class.java)}
+        }
+
+        if (disabledActions[PlayerAction.SET_VOLUME] != true){
+            val canMakeLouder = playerState.volume?.let { v -> v < 1.0f } ?: false
+            ActionButton(R.drawable.volume_full_regular_132, buttonsDisabled, !canMakeLouder) { actionRunCallback(LouderAction::class.java)}
         }
     }
 }
