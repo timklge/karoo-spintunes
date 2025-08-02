@@ -21,8 +21,12 @@ data class PlayerState(
     val volume: Float? = null,
     val thumbnailFetchedAtMs: Long? = null,
 
-    val disabledActions: MutableMap<PlayerAction, Boolean> = mutableMapOf()
+    val disabledActions: MutableMap<PlayerAction, Boolean> = mutableMapOf(),
+
+    val error: PlayerError? = null
 )
+
+data class PlayerError(val title: String, val message: String)
 
 enum class PlayerAction {
     PLAY, PAUSE, SKIP_NEXT, SKIP_PREVIOUS, SEEK, TOGGLE_SHUFFLE, TOGGLE_REPEAT, SET_VOLUME

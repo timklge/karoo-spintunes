@@ -90,34 +90,35 @@ class KarooSpintunesServices(private val webAPIClient: WebAPIClient,
 
         localClient.streamState()
             .debounce(500L)
-            .collect { playerState ->
+            .collect { (playerError, playerState) ->
                 playerStateProvider.update { state ->
                     val disabled = mutableMapOf<PlayerAction, Boolean>()
 
                     disabled[PlayerAction.SET_VOLUME] = false
 
                     state.copy(
-                        isPlayingType = if (playerState.track?.isEpisode == true) PlaybackType.EPISODE else PlaybackType.TRACK,
-                        isPlayingTrackName = playerState.track?.name,
-                        isPlayingTrackUri = playerState.track?.uri,
-                        isPlayingArtistName = playerState.track?.artists?.joinToString(", ") {
+                        isPlayingType = if (playerState?.track?.isEpisode == true) PlaybackType.EPISODE else PlaybackType.TRACK,
+                        isPlayingTrackName = playerState?.track?.name,
+                        isPlayingTrackUri = playerState?.track?.uri,
+                        isPlayingArtistName = playerState?.track?.artists?.joinToString(", ") {
                             it.name ?: ""
                         },
-                        isPlayingShowName = if(playerState.track?.isEpisode == true || playerState.track?.isPodcast == true) playerState.track?.album?.name else null,
-                        isPlayingTrackThumbnailUrls = playerState.track?.imageUri?.raw?.let {
+                        isPlayingShowName = if(playerState?.track?.isEpisode == true || playerState?.track?.isPodcast == true) playerState.track?.album?.name else null,
+                        isPlayingTrackThumbnailUrls = playerState?.track?.imageUri?.raw?.let {
                             Log.d(TAG, "Thumbnail URL: $it")
                             listOf(it)
                         },
-                        isShuffling = playerState.playbackOptions?.isShuffling,
-                        isRepeating = playerState.playbackOptions?.repeatMode?.let { RepeatState.fromInt(it) },
+                        isShuffling = playerState?.playbackOptions?.isShuffling,
+                        isRepeating = playerState?.playbackOptions?.repeatMode?.let { RepeatState.fromInt(it) },
                         isInitialized = true,
-                        currentTrackLengthInMs = playerState.track?.duration?.toInt(),
-                        playProgressInMs = playerState.playbackPosition.toInt(),
-                        isPlaying = playerState.track?.name?.let { !playerState.isPaused },
+                        currentTrackLengthInMs = playerState?.track?.duration?.toInt(),
+                        playProgressInMs = playerState?.playbackPosition?.toInt(),
+                        isPlaying = playerState?.track?.name?.let { !playerState.isPaused },
                         commandPending = false,
                         isLocalPlayer = true,
                         disabledActions = disabled,
-                        volume = localClient.getVolume()
+                        volume = localClient.getVolume(),
+                        error = playerError
                     )
                 }
             }
@@ -239,7 +240,8 @@ class KarooSpintunesServices(private val webAPIClient: WebAPIClient,
                         commandPending = false,
                         isLocalPlayer = false,
                         disabledActions = disabledActions,
-                        volume = playerState?.device?.volumePercent?.toFloat()?.div(100f)?.coerceIn(0f, 1f)
+                        volume = playerState?.device?.volumePercent?.toFloat()?.div(100f)?.coerceIn(0f, 1f),
+                        error = if (playerState != null) null else state.error
                     )
                 }
             } catch (e: Throwable) {

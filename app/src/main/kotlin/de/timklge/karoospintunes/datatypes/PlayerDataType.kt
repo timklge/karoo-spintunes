@@ -133,7 +133,7 @@ fun OptionsRows(
             actionStartActivity(intent)
         }
         // The library button should remain enabled in local mode even when 'buttonsDisabled' is true.
-        ActionButton(R.drawable.library_regular_132, buttonsDisabled && !playerState.isLocalPlayer) {
+        ActionButton(R.drawable.library_regular_132, (buttonsDisabled && !playerState.isLocalPlayer) || playerState.error != null) {
             val intent = Intent(context, PlayActivity::class.java)
             actionStartActivity(intent)
         }

@@ -9,6 +9,7 @@ import de.timklge.karoospintunes.KarooSpintunesExtension
 import de.timklge.karoospintunes.KarooSystemServiceProvider
 import de.timklge.karoospintunes.jsonWithUnknownKeys
 import de.timklge.karoospintunes.makeHttpRequest
+import de.timklge.karoospintunes.spotify.PlayerError
 import de.timklge.karoospintunes.spotify.PlayerStateProvider
 import io.hammerhead.karooext.models.HttpResponseState
 import kotlinx.coroutines.delay
@@ -205,14 +206,10 @@ class OAuth2Client(private val karooSystemServiceProvider: KarooSystemServicePro
                 response = internalMakeAuthorizedRequest(method, url, queue, headers, body, markAsPending)
             }
 
-            if (response.statusCode == 0){
-                error("Network unavailable")
-            }
-
             val responseBody = response.body
             if (responseBody != null && responseBody.isNotEmpty()) response = decompressResponse(response)
 
-            if (response.statusCode !in 200..299) {
+            if (response.statusCode == 204 || response.statusCode !in 200..299) {
                 throw HttpException(response.statusCode, response.error, response.body ?: byteArrayOf())
             }
 
@@ -221,6 +218,17 @@ class OAuth2Client(private val karooSystemServiceProvider: KarooSystemServicePro
             }
 
             return response
+        } catch (e: HttpException) {
+            Log.e(KarooSpintunesExtension.TAG, "HTTP request failed: ${e.status} - ${e.message}", e)
+
+            val reportedError = when (e.status) {
+                0 -> PlayerError("Offline", "No internet connection")
+                204, 404 -> PlayerError("No player", "No active player found")
+                else -> PlayerError("HTTP ${e.status}", e.message ?: "Unknown error")
+            }
+
+            playerStateProvider.update { it.copy(error = reportedError) }
+            throw e
         } finally {
             if (markAsPending) playerStateProvider.update { it.copy(requestPending = it.requestPending - 1) }
         }

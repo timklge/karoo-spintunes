@@ -18,7 +18,6 @@ import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
-import androidx.glance.layout.ContentScale
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxHeight
@@ -164,7 +163,7 @@ class PlayerViewProvider(private val apiClientProvider: APIClientProvider,
                                 }
 
                                 Row(
-                                    modifier = GlanceModifier.fillMaxWidth().height(50.dp),
+                                    modifier = GlanceModifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.Vertical.Top
                                 ) {
                                     if (playerSize == PlayerSize.MEDIUM && appState.isPlayingTrackThumbnailUrls?.isNotEmpty() == true) {
@@ -183,21 +182,22 @@ class PlayerViewProvider(private val apiClientProvider: APIClientProvider,
                                         modifier = GlanceModifier.defaultWeight()
                                     ) {
                                         Text(
-                                            appState.isPlayingTrackName ?: "Unknown",
+                                            appState.isPlayingTrackName ?: (appState.error?.title ?: "Unknown"),
                                             style = TextStyle(
-                                                fontSize = 18.sp,
+                                                fontSize = 20.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = ColorProvider(Color.Black, Color.White)
                                             ),
                                             maxLines = 1
                                         )
+
                                         Text(
-                                            artistName ?: "Waiting for playback...",
+                                            artistName ?: (appState.error?.message ?: "Waiting for playback..."),
                                             style = TextStyle(
-                                                fontSize = 14.sp,
-                                                color = ColorProvider(Color.Black, Color.White)
+                                                fontSize = 16.sp,
+                                                color = ColorProvider(Color.Black, Color.White),
                                             ),
-                                            maxLines = 1
+                                            maxLines = if (appState.error == null) 1 else 3,
                                         )
                                     }
 
