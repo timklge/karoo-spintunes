@@ -407,7 +407,7 @@ fun MainScreen(onFinish: () -> Unit) {
 
                 Log.d(KarooSpintunesExtension.TAG, "Connection state: $connectionState, localSpotifyIsInstalled: $localSpotifyIsInstalled, settingsInitialized: $settingsInitialized")
 
-                if (localSpotifyIsInstalled && settingsInitialized){
+                if (localSpotifyIsInstalled && settingsInitialized && enableLocalSpotify){
                     when (connectionState){
                         is LocalClientConnectionState.Connecting -> {
                             Text(modifier = Modifier.padding(5.dp), text = "Trying to connect to local Spotify client...")

@@ -21,7 +21,7 @@ class APIClientProvider(
         karooSystemServiceProvider.streamSettings()
             .distinctUntilChangedBy { it.useLocalSpotifyIfAvailable }
             .combine(localClient.connectionState) { settings, connectionState ->
-                settings.useLocalSpotifyIfAvailable && connectionState == LocalClientConnectionState.Connected
+                settings.useLocalSpotifyIfAvailable && connectionState != LocalClientConnectionState.NotInstalled
             }
             .distinctUntilChanged()
 
