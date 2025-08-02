@@ -24,6 +24,8 @@ import kotlin.time.Duration.Companion.seconds
 @OptIn(FlowPreview::class)
 suspend fun KarooSystemService.makeHttpRequest(m: String, url: String, queue: Boolean = false, headers: Map<String, String> = emptyMap(), body: ByteArray? = null): HttpResponseState.Complete {
     if (!connected){
+        // Fallback to Ktor client if not running on Karoo
+
         val client = HttpClient()
         try {
             val response = client.request(url) {
