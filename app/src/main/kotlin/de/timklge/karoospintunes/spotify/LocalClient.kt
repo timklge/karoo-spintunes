@@ -33,11 +33,21 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 sealed class LocalClientConnectionState {
-    data class Failed(val message: String) : LocalClientConnectionState()
-    data object Connecting : LocalClientConnectionState()
-    data object Connected : LocalClientConnectionState()
-    data object Idle : LocalClientConnectionState()
-    data object NotInstalled : LocalClientConnectionState()
+    data class Failed(val message: String) : LocalClientConnectionState() {
+        override fun toString(): String = message
+    }
+    data object Connecting : LocalClientConnectionState() {
+        override fun toString(): String = "Connecting"
+    }
+    data object Connected : LocalClientConnectionState() {
+        override fun toString(): String = "Connected"
+    }
+    data object Idle : LocalClientConnectionState() {
+        override fun toString(): String = "Idle"
+    }
+    data object NotInstalled : LocalClientConnectionState() {
+        override fun toString(): String = "Client not installed"
+    }
 }
 
 @Serializable
@@ -74,7 +84,7 @@ class LocalClient(val context: Context) : APIClient {
         }
     }
 
-    fun streamState(): Flow<PlayerState> = channelFlow {
+    fun streamState(): Flow<Pair<PlayerError?, PlayerState?>> = channelFlow {
         connectionState.distinctUntilChanged().collectLatest { connectionState ->
             if (connectionState is LocalClientConnectionState.Connected) {
                 withContext(Dispatchers.Main) {
@@ -110,9 +120,11 @@ class LocalClient(val context: Context) : APIClient {
                             }
                         }
                     }.collect {
-                        send(it)
+                        send(Pair(null, it))
                     }
                 }
+            } else {
+                send(Pair(PlayerError("Client unavailable", connectionState.toString()), null))
             }
         }
     }
