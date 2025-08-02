@@ -136,7 +136,7 @@ class KarooSpintunesServices(private val webAPIClient: WebAPIClient,
                     && state.playProgressInMs >= state.currentTrackLengthInMs) || state.commandPending
 
             if (newValue && !isExhausted){
-                delay(1000)
+                delay(3_000)
                 emit(Unit)
             }
 
