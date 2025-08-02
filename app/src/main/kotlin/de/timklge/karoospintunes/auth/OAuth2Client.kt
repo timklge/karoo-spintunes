@@ -222,7 +222,7 @@ class OAuth2Client(private val karooSystemServiceProvider: KarooSystemServicePro
             Log.e(KarooSpintunesExtension.TAG, "HTTP request failed: ${e.status} - ${e.message}", e)
 
             val reportedError = when (e.status) {
-                0 -> PlayerError("Offline", "No internet connection")
+                0, -1 -> PlayerError("Offline", "No internet connection")
                 204, 404 -> PlayerError("No player", "No active player found")
                 else -> PlayerError("HTTP ${e.status}", e.message ?: "Unknown error")
             }
