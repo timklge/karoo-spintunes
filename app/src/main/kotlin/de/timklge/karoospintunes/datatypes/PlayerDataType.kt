@@ -84,7 +84,7 @@ import kotlinx.coroutines.runBlocking
 fun PlayButton(playerState: PlayerState, playerSize: PlayerSize, disabled: Boolean) {
     if (playerState.isPlaying == true) {
         ActionButton(R.drawable.pause_regular_132, disabled) { actionRunCallback(PauseAction::class.java) }
-    } else if(playerState.isPlaying == false) {
+    } else {
         ActionButton(R.drawable.play_regular_132, disabled) { actionRunCallback(PlayAction::class.java) }
     }
 }
