@@ -15,7 +15,6 @@ import de.timklge.karoospintunes.spotify.RepeatState
 import de.timklge.karoospintunes.spotify.ThumbnailCache
 import de.timklge.karoospintunes.spotify.WebAPIClient
 import io.hammerhead.karooext.models.ActiveRideProfile
-import io.hammerhead.karooext.models.RideProfile
 import io.hammerhead.karooext.models.RideState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -203,7 +202,7 @@ class KarooSpintunesServices(private val webAPIClient: WebAPIClient,
             try {
                 Log.d(TAG, "Getting player state")
                 val start = TimeSource.Monotonic.markNow()
-                val playerState = webAPIClient.getPlayerState(context)
+                val playerState = webAPIClient.getPlayerState()
                 val runtime = TimeSource.Monotonic.markNow() - start
                 Log.d(TAG, "Got player state in $runtime: $playerState")
 

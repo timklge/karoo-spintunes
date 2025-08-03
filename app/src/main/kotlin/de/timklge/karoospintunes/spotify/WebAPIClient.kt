@@ -18,9 +18,9 @@ import de.timklge.karoospintunes.spotify.model.QueueResponse
 import de.timklge.karoospintunes.spotify.model.SavedEpisodesResponse
 import de.timklge.karoospintunes.spotify.model.SearchResponse
 import de.timklge.karoospintunes.spotify.model.ShowsResponse
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.encodeToString
 import java.io.File
 import java.net.URLEncoder
 import java.nio.file.Files
@@ -30,6 +30,7 @@ import kotlin.math.roundToInt
 
 class WebAPIClient(
     private val karooSystemServiceProvider: KarooSystemServiceProvider,
+    private val playerStateProvider: PlayerStateProvider,
     private val oAuth2Client: OAuth2Client,
     private val context: Context
 ): APIClient {
@@ -86,6 +87,8 @@ class WebAPIClient(
     override suspend fun pause() {
         try {
             oAuth2Client.makeAuthorizedRequest( "PUT", "$BASE_URL/me/player/pause")
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled pause action", e)
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Pause", e.message ?: "Failed to pause playback", e)
         }
@@ -95,6 +98,8 @@ class WebAPIClient(
         try {
             val body = playRequest?.let { jsonWithUnknownKeys.encodeToString(it).encodeToByteArray() }
             oAuth2Client.makeAuthorizedRequest("PUT", "$BASE_URL/me/player/play", false, emptyMap(), body)
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled play action", e)
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Play", e.message ?: "Failed to start playing", e)
         }
@@ -104,6 +109,8 @@ class WebAPIClient(
         try {
             val body = jsonWithUnknownKeys.encodeToString(playRequest).encodeToByteArray()
             oAuth2Client.makeAuthorizedRequest("PUT", "$BASE_URL/me/player/play", false, emptyMap(), body)
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled play action", e)
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Play", e.message ?: "Failed to start playing", e)
         }
@@ -112,6 +119,8 @@ class WebAPIClient(
     override suspend fun seek(positionInMs: Int) {
         try {
             oAuth2Client.makeAuthorizedRequest("PUT", "$BASE_URL/me/player/seek?position_ms=$positionInMs")
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled seek action", e)
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Seek", e.message ?: "Failed to seek to position", e)
         }
@@ -120,6 +129,8 @@ class WebAPIClient(
     override suspend fun next() {
         try {
             oAuth2Client.makeAuthorizedRequest("POST", "$BASE_URL/me/player/next")
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled seek action", e)
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Change track", e.message ?: "Failed to start next track", e)
         }
@@ -128,14 +139,20 @@ class WebAPIClient(
     override suspend fun previous() {
         try {
             oAuth2Client.makeAuthorizedRequest("POST", "$BASE_URL/me/player/previous")
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled seek action", e)
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Change track", e.message ?: "Failed to start previous track", e)
         }
     }
 
-    suspend fun getPlayerState(ctx: Context): PlaybackStateResponse? {
+    suspend fun getPlayerState(): PlaybackStateResponse? {
         return try {
             val response = oAuth2Client.makeAuthorizedRequest("GET", "$BASE_URL/me/player?additional_types=episode", markAsPending = false)
+
+            if (response.statusCode == 204) {
+                playerStateProvider.update { it.copy(error = PlayerError("No player", "No active player found")) }
+            }
 
             if (response.statusCode !in 200..299) {
                 error("HTTP ${response.statusCode}: ${response.error}")
@@ -170,6 +187,9 @@ class WebAPIClient(
 
             val jsonString = response.body?.decodeToString() ?: error("Failed to read json")
             jsonWithUnknownKeys.decodeFromString(jsonString)
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled search action", e)
+            null
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Search", e.message ?: "Failed to search", e)
             null
@@ -186,6 +206,9 @@ class WebAPIClient(
 
             val jsonString = response.body?.decodeToString() ?: error("Failed to read json")
             jsonWithUnknownKeys.decodeFromString(jsonString)
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled get playlist action", e)
+            null
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Queue", e.message ?: "Failed to get playlist", e)
             null
@@ -204,6 +227,9 @@ class WebAPIClient(
                 val jsonString = response.body?.decodeToString() ?: error("Failed to read json")
                 jsonWithUnknownKeys.decodeFromString(jsonString)
             }
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled get playlist action", e)
+            null
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Queue", e.message ?: "Failed to get playlist", e)
             null
@@ -222,6 +248,9 @@ class WebAPIClient(
                 val jsonString = response.body?.decodeToString() ?: error("Failed to read json")
                 jsonWithUnknownKeys.decodeFromString(jsonString)
             }
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled get library items action", e)
+            null
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Queue", e.message ?: "Failed to get library items", e)
             null
@@ -240,6 +269,9 @@ class WebAPIClient(
                 val jsonString = response.body?.decodeToString() ?: error("Failed to read json")
                 jsonWithUnknownKeys.decodeFromString(jsonString)
             }
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled shows action", e)
+            null
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Shows", e.message ?: "Failed to get shows", e)
             null
@@ -258,6 +290,9 @@ class WebAPIClient(
                 val jsonString = response.body?.decodeToString() ?: error("Failed to read json")
                 jsonWithUnknownKeys.decodeFromString(jsonString)
             }
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled shows action", e)
+            null
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Episodes", e.message ?: "Failed to get episodes", e)
             null
@@ -276,6 +311,9 @@ class WebAPIClient(
                 val jsonString = response.body?.decodeToString() ?: error("Failed to read json")
                 jsonWithUnknownKeys.decodeFromString(jsonString)
             //}
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled shows action", e)
+            null
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Episodes", e.message ?: "Failed to get episodes", e)
             null
@@ -292,6 +330,9 @@ class WebAPIClient(
 
             val jsonString = response.body?.decodeToString() ?: error("Failed to read json")
             jsonWithUnknownKeys.decodeFromString(jsonString)
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled queue action", e)
+            null
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Queue", e.message ?: "Failed to get queue", e)
             null
@@ -310,6 +351,9 @@ class WebAPIClient(
                 val jsonString = response.body?.decodeToString() ?: error("Failed to read json")
                 jsonWithUnknownKeys.decodeFromString(jsonString)
             }
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled getting playlists", e)
+            null
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Playlists", e.message ?: "Failed to get playlists", e)
             null
@@ -319,6 +363,8 @@ class WebAPIClient(
     override suspend fun toggleShuffle(shuffle: Boolean) {
         try {
             oAuth2Client.makeAuthorizedRequest("PUT", "$BASE_URL/me/player/shuffle?state=$shuffle")
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled shuffle action", e)
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Toggle Shuffle", e.message ?: "Failed to set shuffle mode", e)
         }
@@ -327,6 +373,8 @@ class WebAPIClient(
     override suspend fun toggleRepeat(repeat: RepeatState) {
         try {
             oAuth2Client.makeAuthorizedRequest("PUT", "$BASE_URL/me/player/repeat?state=${repeat.id}")
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled repeat action", e)
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Toggle Repeat", e.message ?: "Failed to set repeat mode", e)
         }
@@ -337,6 +385,8 @@ class WebAPIClient(
 
         try {
             oAuth2Client.makeAuthorizedRequest("PUT", "$BASE_URL/me/player/volume?volume_percent=${volumePercent}")
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled volume action", e)
         } catch(e: Throwable){
             karooSystemServiceProvider.showError("Volume Control", e.message ?: "Failed to set volume", e)
         }
@@ -349,6 +399,8 @@ class WebAPIClient(
             }
 
             oAuth2Client.makeAuthorizedRequest("PUT", "$BASE_URL/me/tracks/?ids=${encoded}")
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled add track to library action", e)
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Add To Library", e.message ?: "Failed to add track", e)
         }
@@ -360,6 +412,8 @@ class WebAPIClient(
                 URLEncoder.encode(uri, "UTF-8")
             }
             oAuth2Client.makeAuthorizedRequest("POST", "$BASE_URL/me/player/queue?uri=${url}")
+        } catch (e: CancellationException) {
+            Log.w(KarooSpintunesExtension.TAG, "Cancelled add to queue action", e)
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Add To Queue", e.message ?: "Failed to add track", e)
         }
