@@ -209,7 +209,7 @@ class OAuth2Client(private val karooSystemServiceProvider: KarooSystemServicePro
             val responseBody = response.body
             if (responseBody != null && responseBody.isNotEmpty()) response = decompressResponse(response)
 
-            if (response.statusCode == 204 || response.statusCode !in 200..299) {
+            if (response.statusCode !in 200..299) {
                 throw HttpException(response.statusCode, response.error, response.body ?: byteArrayOf())
             }
 
@@ -223,7 +223,6 @@ class OAuth2Client(private val karooSystemServiceProvider: KarooSystemServicePro
 
             val reportedError = when (e.status) {
                 0, -1 -> PlayerError("Offline", "No internet connection")
-                204, 404 -> PlayerError("No player", "No active player found")
                 else -> PlayerError("HTTP ${e.status}", e.message ?: "Unknown error")
             }
 
