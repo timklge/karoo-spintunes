@@ -2,6 +2,7 @@ package de.timklge.karoospintunes.spotify
 
 import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import de.timklge.karoospintunes.KarooSpintunesExtension
 import de.timklge.karoospintunes.KarooSystemServiceProvider
 import de.timklge.karoospintunes.auth.OAuth2Client
@@ -192,6 +193,7 @@ class WebAPIClient(
             null
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Search", e.message ?: "Failed to search", e)
+            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             null
         }
     }
@@ -211,6 +213,7 @@ class WebAPIClient(
             null
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Queue", e.message ?: "Failed to get playlist", e)
+            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             null
         }
     }
@@ -232,6 +235,7 @@ class WebAPIClient(
             null
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Queue", e.message ?: "Failed to get playlist", e)
+            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             null
         }
     }
@@ -253,6 +257,7 @@ class WebAPIClient(
             null
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Queue", e.message ?: "Failed to get library items", e)
+            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             null
         }
     }
@@ -274,6 +279,7 @@ class WebAPIClient(
             null
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Shows", e.message ?: "Failed to get shows", e)
+            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             null
         }
     }
@@ -295,6 +301,7 @@ class WebAPIClient(
             null
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Episodes", e.message ?: "Failed to get episodes", e)
+            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             null
         }
     }
@@ -316,6 +323,7 @@ class WebAPIClient(
             null
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Episodes", e.message ?: "Failed to get episodes", e)
+            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             null
         }
     }
@@ -335,6 +343,7 @@ class WebAPIClient(
             null
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Queue", e.message ?: "Failed to get queue", e)
+            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             null
         }
     }
@@ -356,6 +365,7 @@ class WebAPIClient(
             null
         } catch (e: Throwable) {
             karooSystemServiceProvider.showError("Playlists", e.message ?: "Failed to get playlists", e)
+            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             null
         }
     }
