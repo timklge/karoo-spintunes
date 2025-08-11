@@ -6,7 +6,7 @@
 
 This extension for Karoo devices adds a graphical data field with Spotify music controls that can be added to data pages.
 
-Compatible with Karoo 2 and Karoo 3 devices.
+Compatible with Karoo 3 devices.
 
 ![Player](player.png)
 ![Playlists](playlists.png)
@@ -28,14 +28,6 @@ If you are using a Karoo 3, you can use [Hammerhead's sideloading procedure](htt
 2. Your karoo should show an info screen about the app now. Press "Install".
 3. Open the app from the main menu and acknowledge the API usage note.
 4. Set up your data fields as desired.
-
-If you are using a Karoo 2, you can use manual sideloading:
-
-1. Download the apk from the [releases page](https://github.com/timklge/karoo-spintunes/releases) (or build it from source)
-2. Set up your Karoo for sideloading. DC Rainmaker has a great [step-by-step guide](https://www.dcrainmaker.com/2021/02/how-to-sideload-android-apps-on-your-hammerhead-karoo-1-karoo-2.html).
-3. Install the app by running `adb install app-release.apk`.
-4. Open the app from the main menu and acknowledge the API usage note.
-5. Set up your data fields as desired.
 
 There are two ways to use this app:
 
