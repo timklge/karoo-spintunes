@@ -10,6 +10,7 @@ import de.timklge.karoospintunes.spotify.LocalClient
 import de.timklge.karoospintunes.spotify.PlaybackType
 import de.timklge.karoospintunes.spotify.PlayerAction
 import de.timklge.karoospintunes.spotify.PlayerInPreviewModeProvider
+import de.timklge.karoospintunes.spotify.PlayerState
 import de.timklge.karoospintunes.spotify.PlayerStateProvider
 import de.timklge.karoospintunes.spotify.RepeatState
 import de.timklge.karoospintunes.spotify.ThumbnailCache
@@ -165,21 +166,30 @@ class KarooSpintunesServices(private val webAPIClient: WebAPIClient,
             val rideState: RideState,
             val rideProfile: ActiveRideProfile?,
             val settings: SpintuneSettings,
-            val playerInPreviewMode: Int
+            val playerInPreviewMode: Int,
+            val playerState: PlayerState
         )
 
         val refreshRequestedFlowActiveOrPreview = combine(karooSystem.karooSystemService.streamDatatypeIsVisible(PlayerDataType.DATA_TYPE_ID),
             karooSystem.streamRideState(),
             karooSystem.karooSystemService.streamActiveRideProfile(),
             karooSystem.streamSettings(),
-            playerInPreviewModeProvider.state
-        ) { isVisible, rideState, rideProfile, settings, playerInPreviewMode ->
-            StreamData(isVisible, rideState, rideProfile, settings, playerInPreviewMode.inPreviewMode)
-        }.map { streamData ->
-            if (streamData.settings.onlyRefreshOnActivePage == true) {
+            playerInPreviewModeProvider.state,
+            playerStateProvider.state
+        ) { args ->
+            val isVisible = args[0] as Boolean
+            val rideState = args[1] as RideState
+            val rideProfile = args[2] as ActiveRideProfile?
+            val settings = args[3] as SpintuneSettings
+            val playerInPreviewMode = args[4] as PlayerInPreviewModeProvider.PlayerInPreviewModeState
+            val playerState = args[5] as PlayerState
+
+            StreamData(isVisible, rideState, rideProfile, settings, playerInPreviewMode.inPreviewMode, playerState)
+        }.distinctUntilChanged().map { streamData ->
+            if (streamData.settings.onlyRefreshOnActivePage) {
                 Log.d(TAG, "Player visibility update: isVisible=${streamData.isVisible}, playerInPreviewMode=${streamData.playerInPreviewMode}, rideState=${streamData.rideState}")
 
-                streamData.playerInPreviewMode > 0 || (streamData.isVisible && (streamData.rideState is RideState.Recording || streamData.rideState is RideState.Paused))
+                streamData.playerInPreviewMode > 0 || (streamData.isVisible && (streamData.rideState is RideState.Recording || streamData.rideState is RideState.Paused)) || streamData.playerState.commandPending
             } else {
                 val datatypesOnCurrentProfile = streamData.rideProfile?.profile?.pages
                     ?.flatMap { it.elements }
@@ -190,7 +200,7 @@ class KarooSpintunesServices(private val webAPIClient: WebAPIClient,
 
                 Log.d(TAG, "Player visibility update: playerInPreviewMode=${streamData.playerInPreviewMode}, isOnCurrentProfile=$isOnCurrentProfile, rideState=${streamData.rideState}")
 
-                streamData.playerInPreviewMode > 0 || isOnCurrentProfile
+                streamData.playerInPreviewMode > 0 || isOnCurrentProfile || streamData.playerState.commandPending
             }
         }.distinctUntilChanged()
 
