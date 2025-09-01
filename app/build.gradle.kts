@@ -78,7 +78,7 @@ tasks.register("generateManifest") {
             "latestVersionCode" to android.defaultConfig.versionCode,
             "developer" to "timklge",
             "description" to "Provides media controls for Spotify. Can be used as a remote control for Spotify running on your phone / computer or offline if you have sideloaded the Spotify app itself on the Karoo. Currently not compatible with Karoo 2.",
-            "releaseNotes" to "* Fix player state is sometimes not refreshed when starting playback from the library page\n* Also show connection errors on library page\n* Fix error on track change\n* Rearrange seek buttons\n* Show error messages on player data field",
+            "releaseNotes" to "* Fix player state is not refreshed when ride has not been started yet\n* Fix player state is sometimes not refreshed when starting playback from the library page\n* Also show connection errors on library page\n* Fix error on track change",
             "screenshotUrls" to listOf(
                 "https://github.com/timklge/karoo-spintunes/releases/latest/download/player.png",
                 "https://github.com/timklge/karoo-spintunes/releases/latest/download/playlists.png",
