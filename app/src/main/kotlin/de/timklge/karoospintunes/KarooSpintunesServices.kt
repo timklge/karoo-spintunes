@@ -189,14 +189,14 @@ class KarooSpintunesServices(private val webAPIClient: WebAPIClient,
             if (streamData.settings.onlyRefreshOnActivePage) {
                 Log.d(TAG, "Player visibility update: isVisible=${streamData.isVisible}, playerInPreviewMode=${streamData.playerInPreviewMode}, rideState=${streamData.rideState}")
 
-                streamData.playerInPreviewMode > 0 || (streamData.isVisible && (streamData.rideState is RideState.Recording || streamData.rideState is RideState.Paused)) || streamData.playerState.commandPending
+                streamData.playerInPreviewMode > 0 || streamData.isVisible || streamData.playerState.commandPending
             } else {
                 val datatypesOnCurrentProfile = streamData.rideProfile?.profile?.pages
                     ?.flatMap { it.elements }
                     ?.map { it.dataTypeId }
                     ?.toSet() ?: emptySet()
 
-                val isOnCurrentProfile = (streamData.rideState is RideState.Recording || streamData.rideState is RideState.Paused) && datatypesOnCurrentProfile.contains(PlayerDataType.DATA_TYPE_ID)
+                val isOnCurrentProfile = datatypesOnCurrentProfile.contains(PlayerDataType.DATA_TYPE_ID)
 
                 Log.d(TAG, "Player visibility update: playerInPreviewMode=${streamData.playerInPreviewMode}, isOnCurrentProfile=$isOnCurrentProfile, rideState=${streamData.rideState}")
 
