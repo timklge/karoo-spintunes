@@ -25,7 +25,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.URLEncoder
 import java.nio.file.Files
-import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.attribute.FileTime
 import kotlin.math.roundToInt
 
@@ -36,7 +35,6 @@ class WebAPIClient(
     private val context: Context
 ): APIClient {
     companion object {
-        const val CACHE_TIMEOUT = 1000 * 60 * 60 * 24 * 7L // 1 week
         const val BASE_URL = "https://api.spotify.com/v1"
         const val PAGE_SIZE = 30
     }
@@ -46,17 +44,11 @@ class WebAPIClient(
             val name = V::class.simpleName ?: error("Failed to get class name")
             val file = File(context.cacheDir, "webapi_${name}_${identifier}")
             val exists = file.exists()
-            val creationTime = if (exists){
-                Files.readAttributes(file.toPath(), BasicFileAttributes::class.java).creationTime()?.toMillis() ?: 0L
-            } else {
-                0L
-            }
-            val cacheFileValid = exists && creationTime > System.currentTimeMillis() - CACHE_TIMEOUT
 
-            val map = if (cacheFileValid){
+            val map = if (exists){
                 jsonWithUnknownKeys.decodeFromString<MutableMap<K, V>>(file.readText())
             } else {
-                mutableMapOf()
+                mutableMapOf<K, V>()
             }
 
             val value = if (map.containsKey(key)){
