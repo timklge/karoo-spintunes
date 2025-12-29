@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -153,10 +154,13 @@ class KarooSpintunesServices(private val webAPIClient: WebAPIClient,
         }
 
         val refreshRequestedFlow = tickerFlow.flatMapLatest {
-            flow {
-                while (true) {
-                    emit(Unit)
-                    delay(45 * 1_000)
+            karooSystem.streamSettings().flatMapLatest { settings ->
+                val delayMs = if (settings.onlyRefreshOnActivePage) REFRESH_INTERVAL_ACTIVE_PAGE_MS else REFRESH_INTERVAL_DEFAULT_MS
+                flow {
+                    while (true) {
+                        emit(Unit)
+                        delay(delayMs)
+                    }
                 }
             }
         }
@@ -316,5 +320,10 @@ class KarooSpintunesServices(private val webAPIClient: WebAPIClient,
                     delay(1_000L * 60)
                 }
             }
+    }
+
+    companion object {
+        const val REFRESH_INTERVAL_ACTIVE_PAGE_MS = 25 * 1_000L
+        const val REFRESH_INTERVAL_DEFAULT_MS = 45 * 1_000L
     }
 }
