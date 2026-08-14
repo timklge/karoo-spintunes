@@ -12,6 +12,7 @@ import de.timklge.karoospintunes.makeHttpRequest
 import de.timklge.karoospintunes.spotify.PlayerError
 import de.timklge.karoospintunes.spotify.PlayerStateProvider
 import io.hammerhead.karooext.models.HttpResponseState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -91,11 +92,12 @@ class OAuth2Client(private val karooSystemServiceProvider: KarooSystemServicePro
     private suspend fun updateAccessToken(response: HttpResponseState.Complete): TokenResponse {
         try {
             if (response.statusCode !in 200..299) {
+                val body = response.body ?: byteArrayOf()
                 // Handle specific refresh token errors
                 when (response.statusCode) {
-                    400 -> error("Invalid refresh token")
-                    401 -> error("Client is not authorized")
-                    else -> error("HTTP ${response.statusCode}: ${response.error}")
+                    400 -> throw HttpException(400, "Invalid refresh token. Please login again.", body)
+                    401 -> throw HttpException(401, "Client is not authorized. Please login again.", body)
+                    else -> throw HttpException(response.statusCode, "HTTP ${response.statusCode}: ${response.error}", body)
                 }
             }
 
@@ -123,9 +125,9 @@ class OAuth2Client(private val karooSystemServiceProvider: KarooSystemServicePro
                 return token
             }
 
-            error("Failed to exchange code for token: ${response.error}")
+            throw HttpException(response.statusCode, "Failed to get auth token: ${response.error}. Please login again.", response.body ?: byteArrayOf())
         } catch (e: Throwable){
-            Log.e(KarooSpintunesExtension.TAG, "Failed to exchange code for token", e)
+            Log.e(KarooSpintunesExtension.TAG, "Failed to get auth token. Please login again.", e)
 
             karooSystemServiceProvider.saveSettings { settings -> settings.copy(token = null) }
 
@@ -155,7 +157,7 @@ class OAuth2Client(private val karooSystemServiceProvider: KarooSystemServicePro
 
     private fun refreshAccessToken(): Flow<TokenResponse> = flow {
         Log.i(KarooSpintunesExtension.TAG, "Refreshing access token")
-        val refreshToken = karooSystemServiceProvider.streamSettings().first().token?.refreshToken ?: error("No refresh token available")
+        val refreshToken = karooSystemServiceProvider.streamSettings().first().token?.refreshToken ?: throw HttpException(401, "No refresh token available", byteArrayOf())
         
         val formData = buildString {
             append("grant_type=refresh_token")
@@ -237,6 +239,12 @@ class OAuth2Client(private val karooSystemServiceProvider: KarooSystemServicePro
             }
 
             playerStateProvider.update { it.copy(error = reportedError) }
+            throw e
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            Log.e(KarooSpintunesExtension.TAG, "Request failed: ${e.message}", e)
+            playerStateProvider.update { it.copy(error = PlayerError("Error", e.message ?: "Unknown error")) }
             throw e
         } finally {
             if (markAsPending) playerStateProvider.update { it.copy(requestPending = it.requestPending - 1) }
