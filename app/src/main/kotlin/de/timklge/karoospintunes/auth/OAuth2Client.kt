@@ -108,7 +108,17 @@ class OAuth2Client(private val karooSystemServiceProvider: KarooSystemServicePro
 
                 Log.i(KarooSpintunesExtension.TAG, "Successfully exchanged code for token")
 
-                karooSystemServiceProvider.saveSettings { settings -> settings.copy(token = token) }
+                karooSystemServiceProvider.saveSettings { settings ->
+                    val newToken = settings.token?.copy(
+                        accessToken = token.accessToken,
+                        tokenType = token.tokenType,
+                        expiresIn = token.expiresIn,
+                        refreshToken = token.refreshToken ?: settings.token.refreshToken,
+                        scope = token.scope ?: settings.token.scope
+                    ) ?: token
+
+                    settings.copy(token = newToken)
+                }
 
                 return token
             }
