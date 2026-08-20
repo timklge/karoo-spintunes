@@ -22,12 +22,7 @@ Compatible with Karoo 3 devices.
 
 ## Installation
 
-If you are using a Karoo 3, you can use [Hammerhead's sideloading procedure](https://support.hammerhead.io/hc/en-us/articles/31576497036827-Companion-App-Sideloading) to install the app:
-
-1. Using the browser on your phone, long-press [this download link](https://github.com/timklge/karoo-spintunes/releases/latest/download/app-release.apk) and share it with the Hammerhead Companion app.
-2. Your karoo should show an info screen about the app now. Press "Install".
-3. Open the app from the main menu and acknowledge the API usage note.
-4. Set up your data fields as desired.
+This extension is available from the extension library on your Karoo 3. Find more information on extensions in the [Hammerhead FAQ](https://support.hammerhead.io/hc/en-us/articles/34676015530907-Karoo-OS-Extensions-Library).
 
 There are two ways to use this app:
 
